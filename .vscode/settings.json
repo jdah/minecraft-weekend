@@ -1,0 +1,29 @@
+{
+    "files.associations": {
+        "*.sqlp": "sql",
+        "cglm.h": "c",
+        "shader.h": "c",
+        "camera.h": "c",
+        "texture.h": "c",
+        "window.h": "c",
+        "gfx.h": "c",
+        "vec3.h": "c",
+        "chunk.h": "c",
+        "vector": "c",
+        "iosfwd": "c",
+        "iterator": "c",
+        "random": "c",
+        "*.tcc": "c",
+        "noise1234.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "__node_handle": "c",
+        "queue": "c",
+        "stack": "c",
+        "block.h": "c",
+        "__locale": "c",
+        "functional": "c"
+    },
+    "C_Cpp.dimInactiveRegions": false
+}
