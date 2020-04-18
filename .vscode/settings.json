@@ -23,7 +23,20 @@
         "stack": "c",
         "block.h": "c",
         "__locale": "c",
-        "functional": "c"
+        "functional": "c",
+        "__hash_table": "c",
+        "__split_buffer": "c",
+        "__tree": "c",
+        "bitset": "c",
+        "deque": "c",
+        "initializer_list": "c",
+        "list": "c",
+        "map": "c",
+        "unordered_map": "c",
+        "utility": "c",
+        "valarray": "c",
+        "__functional_base": "c",
+        "memory": "c"
     },
     "C_Cpp.dimInactiveRegions": false
 }
