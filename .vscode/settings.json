@@ -36,7 +36,8 @@
         "utility": "c",
         "valarray": "c",
         "__functional_base": "c",
-        "memory": "c"
+        "memory": "c",
+        "thread": "c"
     },
     "C_Cpp.dimInactiveRegions": false
 }

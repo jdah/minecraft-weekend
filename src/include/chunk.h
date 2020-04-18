@@ -12,9 +12,7 @@
 
 #define CHUNK_VOLUME (CHUNK_SIZE.x * CHUNK_SIZE.y * CHUNK_SIZE.z)
 
-struct Mesh {
-    struct Chunk *chunk;
-
+struct MeshBuffer {
     // current number of vertices buffered and current buffer indices
     size_t vertex_count, data_index, indices_index;
 
@@ -22,10 +20,17 @@ struct Mesh {
     f32 *data_buffer;
     u16 *index_buffer;
 
-    // total index count after rendering
-    size_t index_count;
+    // offset and count for rendering
+    size_t indices_offset, indices_count;
+};
 
-    // buffer objectts
+struct Mesh {
+    struct Chunk *chunk;
+
+    // 7 separate buffers: 1 base (normal) and then 6 for each transparency direction
+    struct MeshBuffer buffers[7];
+
+    // buffer objects
     struct VAO vao;
     struct VBO vbo, ibo;
 };

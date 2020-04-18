@@ -49,7 +49,7 @@ const f32 CUBE_UVS[] = {
 struct {
     f32 data[(16 * 256 * 16) * 8 * 5 * sizeof(f32)];
     u16 indices[(16 * 256 * 16) * 36 * sizeof(u16)];
-} buffers;
+} buffers[7];
 
 void mesh_init(struct Mesh *self, struct Chunk *chunk) {
     memset(self, 0, sizeof(struct Mesh));
@@ -65,19 +65,83 @@ void mesh_destroy(struct Mesh *self) {
     vbo_destroy(self->ibo);
 }
 
-void mesh_prepare(struct Mesh *self, f32 *data, u16 *indices) {
-    self->vertex_count = 0;
-    self->data_index = 0;
-    self->indices_index = 0;
+void buffer_prepare(struct MeshBuffer *self, f32 *data, u16 *indices) {
+    memset(self, 0, sizeof(struct MeshBuffer));
     self->data_buffer = data;
     self->index_buffer = indices;
-    self->index_count = 0;
+}
+
+void mesh_prepare(struct Mesh *self) {
+    for (size_t i = 0; i < 7; i++) {
+        buffer_prepare(&self->buffers[i], buffers[i].data, buffers[i].indices);
+    }
 }
 
 void mesh_finalize(struct Mesh *self) {
-    self->index_count = self->indices_index;
-    vbo_buffer(self->vbo, self->data_buffer, 0, self->data_index * sizeof(f32));
-    vbo_buffer(self->ibo, self->index_buffer, 0, self->indices_index * sizeof(u16));
+    // Reverse the order of indices in the negative-facing transparency direcetions.
+    // Since traversal/render order is positive we need these to appear front to back
+    // in their own respective direction.
+    for (enum Direction d = 0; d < 6; d++) {
+        struct MeshBuffer *buffer = &self->buffers[1 + d];
+        // if (d == NORTH || d == WEST || d == DOWN) {
+            const size_t sz = 6 * sizeof(u16);
+            void *a = buffer->index_buffer;
+            size_t len = (buffer->indices_index / 6);
+            
+            if (len == 0) {
+                continue;
+            }
+
+            size_t i = len - 1, j = 0;
+
+            while (i > j) {
+                u16 t[6];
+
+                // swap a[i] and a[j]
+                memcpy(t, a + (i * sz), sz);
+                memcpy(a + (i * sz), a + (j * sz), sz);
+                memcpy(a + (j * sz), t, sz);
+                memset(a + (j * sz), 0, sz);
+                memset(a + (i * sz), 0, sz);
+                // printf("swap!  %d, %d\n", i, j);
+                
+                i--;
+                j++; 
+            }
+
+            memset(buffer->index_buffer, 0, buffer->indices_index * 3);
+            // memset(buffer->data_buffer, 0, buffer->data_index * sizeof(f32));
+        // }
+    }
+
+    size_t data_len = 0, indices_len = 0;
+
+    for (size_t i = 0; i < 7; i++) {
+        data_len += self->buffers[i].data_index;
+        indices_len += self->buffers[i].indices_index;
+    }
+
+    // Move data into two contiguous buffers
+    f32 *data = (f32*) malloc((data_len * sizeof(f32)) + (indices_len * sizeof(u16)));
+    u16 *indices = (u16*) (data + data_len);
+
+    size_t di = 0, ii = 0, vc = 0;
+    for (size_t i = 0; i < 7; i++) {
+        memcpy(data + di, self->buffers[i].data_buffer, self->buffers[i].data_index * sizeof(f32));
+        memcpy(indices + ii, self->buffers[i].index_buffer, self->buffers[i].indices_index * sizeof(u16));
+
+        self->buffers[i].indices_offset = vc;
+        self->buffers[i].indices_count = self->buffers[i].indices_index;
+
+        vc += self->buffers[i].vertex_count;
+        di += self->buffers[i].data_index;
+        ii += self->buffers[i].indices_index;
+    }
+
+    vbo_buffer(self->vbo, data, 0, di * sizeof(f32));
+    vbo_buffer(self->ibo, indices, 0, ii * sizeof(u16));
+
+    free(data);
 }
  
 void mesh_render(struct Mesh *self) {
@@ -86,59 +150,73 @@ void mesh_render(struct Mesh *self) {
     shader_uniform_mat4(state.shader, "m", glms_translate(glms_mat4_identity(), IVEC3S2V(self->chunk->position)));
     shader_uniform_texture2D(state.shader, "tex", state.atlas.texture, 0);
 
-    vao_attr(self->vao, self->vbo, 0, 3, GL_FLOAT, 8 * sizeof(f32), 0 * sizeof(f32));
-    vao_attr(self->vao, self->vbo, 1, 2, GL_FLOAT, 8 * sizeof(f32), 3 * sizeof(f32));
-    vao_attr(self->vao, self->vbo, 2, 3, GL_FLOAT, 8 * sizeof(f32), 5 * sizeof(f32));
+    const size_t vertex_size = 8 * sizeof(f32);
+
+    vao_attr(self->vao, self->vbo, 0, 3, GL_FLOAT, vertex_size, 0 * sizeof(f32));
+    vao_attr(self->vao, self->vbo, 1, 2, GL_FLOAT, vertex_size, 3 * sizeof(f32));
+    vao_attr(self->vao, self->vbo, 2, 3, GL_FLOAT, vertex_size, 5 * sizeof(f32));
 
     vao_bind(self->vao);
     vbo_bind(self->ibo);
-    glDrawElements(GL_TRIANGLES, self->index_count, GL_UNSIGNED_SHORT, 0);
+
+    for (size_t i = 0; i < 7; i++) {
+        struct MeshBuffer buffer = self->buffers[i];
+        if (buffer.indices_count > 0) {
+            glDrawElementsBaseVertex(
+                GL_TRIANGLES, buffer.indices_count,
+                GL_UNSIGNED_SHORT, 0, buffer.indices_offset);
+        }
+    }
 }
 
 static void emit_face(
-    struct Mesh *mesh, vec3s position, enum Direction direction, 
-    vec2s uv_offset, vec2s uv_unit) {
+    struct MeshBuffer *buffer, vec3s position, enum Direction direction, 
+    vec2s uv_offset, vec2s uv_unit, bool transparent) {
     // Emit vertices
     for (size_t i = 0; i < 4;  i++) {
         const f32 *vertex = &CUBE_VERTICES[CUBE_INDICES[(direction * 6) + UNIQUE_INDICES[i]] * 3];
-        mesh->data_buffer[mesh->data_index++] = position.x + vertex[0];
-        mesh->data_buffer[mesh->data_index++] = position.y + vertex[1];
-        mesh->data_buffer[mesh->data_index++] = position.z + vertex[2];
-        mesh->data_buffer[mesh->data_index++] = uv_offset.x + (uv_unit.x * CUBE_UVS[(i * 2) + 0]);
-        mesh->data_buffer[mesh->data_index++] = uv_offset.y + (uv_unit.y * CUBE_UVS[(i * 2) + 1]);
+        buffer->data_buffer[buffer->data_index++] = position.x + vertex[0];
+        buffer->data_buffer[buffer->data_index++] = position.y + vertex[1];
+        buffer->data_buffer[buffer->data_index++] = position.z + vertex[2];
+        buffer->data_buffer[buffer->data_index++] = uv_offset.x + (uv_unit.x * CUBE_UVS[(i * 2) + 0]);
+        buffer->data_buffer[buffer->data_index++] = uv_offset.y + (uv_unit.y * CUBE_UVS[(i * 2) + 1]);
 
-        // TODO: lighting
+        // TODO: real lighting
         // Vary color according to face direction
         f32 color;
-        switch (direction) {
-            case UP:
-                color = 1.0f;
-                break;
-            case NORTH:
-            case SOUTH:
-                color = 0.92f;
-                break;
-            case EAST:
-            case WEST:
-                color = 0.86f;
-                break;
-            case DOWN:
-                color = 0.78f;
-                break;
+        if (transparent) {
+            color = 1.0f;
+        } else {
+            switch (direction) {
+                case UP:
+                    color = 1.0f;
+                    break;
+                case NORTH:
+                case SOUTH:
+                    color = 0.92f;
+                    break;
+                case EAST:
+                case WEST:
+                    color = 0.86f;
+                    break;
+                case DOWN:
+                    color = 0.78f;
+                    break;
+            }
         }
 
         for (size_t j = 0; j < 3; j++) {
-            mesh->data_buffer[mesh->data_index++] = color;
+            buffer->data_buffer[buffer->data_index++] = color;
         } 
     }
 
     // Emit indices
     for (size_t i = 0; i < 6; i++) {
-        mesh->index_buffer[mesh->indices_index++] = mesh->vertex_count + FACE_INDICES[i];
+        buffer->index_buffer[buffer->indices_index++] = buffer->vertex_count + FACE_INDICES[i];
     }
 
     // Emitted 4 more vertices, bump the vertex count
-    mesh->vertex_count += 4;
+    buffer->vertex_count += 4;
 }
 
 void chunk_init(struct Chunk *self, struct World *world, ivec3s offset) {
@@ -211,32 +289,34 @@ u32 chunk_get_data(struct Chunk *self, ivec3s pos) {
 }
 
 static void mesh(struct Chunk *self) {
-    mesh_prepare(&self->mesh, buffers.data, buffers.indices);
+    mesh_prepare(&self->mesh);
 
     chunk_foreach(pos) {
         vec3s fpos = IVEC3S2V(pos);
         ivec3s wpos = glms_ivec3_add(pos, self->position);
-        u32 data = self->data[chunk_pos_to_index(pos)];
 
-        if(data != 0) {            
+        u32 data = self->data[chunk_pos_to_index(pos)];
+        if(data != 0) {
+            struct Block block = BLOCKS[data], neighbor_block;
+            bool transparent = block.is_transparent(self->world, wpos);
+
             for (enum Direction d = 0; d < 6; d++) {
                 ivec3s dv = DIR2IVEC3S(d);
                 ivec3s neighbor = glms_ivec3_add(pos, dv), wneighbor = glms_ivec3_add(wpos, dv);
 
-                bool visible = false;
-
                 if (chunk_in_bounds(neighbor)) {
-                    visible = BLOCKS[self->data[chunk_pos_to_index(neighbor)]].is_transparent(self->world, wneighbor);
+                    neighbor_block = BLOCKS[self->data[chunk_pos_to_index(neighbor)]];
                 } else {
-                    visible = world_in_bounds(self->world, wneighbor) &&
-                        BLOCKS[world_get_data(self->world, wneighbor)].is_transparent(self->world, wneighbor);
+                    neighbor_block = BLOCKS[world_get_data(self->world, wneighbor)];
                 }
 
-                if (visible) {
+                bool neighbor_transparent = neighbor_block.is_transparent(self->world, wneighbor);
+                if (neighbor_transparent && (!transparent ||
+                    (transparent && neighbor_block.id != block.id))) {
                     emit_face(
-                        &self->mesh, fpos, d,
+                        &self->mesh.buffers[transparent ? (1 + d) : 0], fpos, d,
                         atlas_offset(state.atlas, BLOCKS[data].get_texture_location(self->world, wpos, d)),
-                        state.atlas.sprite_unit);
+                        state.atlas.sprite_unit, false);
                 }
             }
         }

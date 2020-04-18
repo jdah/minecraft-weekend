@@ -202,6 +202,20 @@ glm_ivec3_norm2(ivec3 v) {
 }
 
 /*!
+ * @brief euclidean norm (magnitude), also called L2 norm
+ *        this will give magnitude of vector in euclidean space
+ *
+ * @param[in] v vector
+ *
+ * @return norm
+ */
+CGLM_INLINE
+int
+glm_ivec3_norm(ivec3 v) {
+  return (int) sqrtf(glm_ivec3_norm2(v));
+}
+
+/*!
  * @brief add a vector to b vector store result in dest
  *
  * @param[in]  a    vector1

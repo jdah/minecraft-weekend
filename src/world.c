@@ -6,6 +6,43 @@
         (_cname = (_w)->chunks[i]) != (void *) INT64_MAX;\
         i++)
 
+// back-to-front ordering comparator
+static int _btf_cmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
+    return -(glms_ivec3_norm2(glms_ivec3_sub(*center, **a)) - glms_ivec3_norm2(glms_ivec3_sub(*center, **b)));
+}
+
+// front-to-back ordering comparator
+static int _ftb_cmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
+    return glms_ivec3_norm2(glms_ivec3_sub(*center, **a)) - glms_ivec3_norm2(glms_ivec3_sub(*center, **b));
+}
+
+// _cmp is comparison function for qsort_r
+// _v0 is 'n'
+// _v1 is counter
+// _v2 is ivec3s* offsets array
+// TODO: qsort_r is not portable
+#define _world_foreach_cmp_impl(_w, _cname, _cmp, _v0, _v1, _v2)\
+    size_t _v0 = 0, _v1 = 0;\
+    ivec3s *_v2[_w->chunks_size * _w->chunks_size];\
+    for (_v1 = 0; _v1 < (_w->chunks_size * _w->chunks_size); _v1++)\
+        { if (_w->chunks[_v1] != NULL) _v2[_v0++] = &_w->chunks[_v1]->offset; }\
+    qsort_r(_v2, _v0, sizeof(ivec3s*), &_w->center_offset, (int (*)(void*, const void*, const void*)) _cmp);\
+    struct Chunk *_cname;\
+    for (size_t i = 0; i < _v0 &&\
+        (_cname = (_w)->chunks[world_chunk_index(_w, *_v2[i])]) != (void *) INT64_MAX;\
+        i++)
+
+#define CONCAT_IMPL(x, y) x ## y
+#define CONCAT(x, y) CONCAT_IMPL(x, y)
+
+// iterate chunks from the borders in (back to front)
+#define world_foreach_btf(_w, _cname)\
+    _world_foreach_cmp_impl(_w, _cname, _btf_cmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
+    
+// iterate chunks from the center out (front to back)
+#define world_foreach_ftb(_w, _cname)\
+    _world_foreach_cmp_impl(_w, _cname, _ftb_cmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
+
 // chunk offset -> world array index
 size_t world_chunk_index(struct World *self, ivec3s offset) {
     ivec3s p = glms_ivec3_sub(offset, self->chunks_origin);
@@ -115,11 +152,14 @@ u32 world_get_data(struct World *self, ivec3s pos) {
 }
 
 // Attempt to load any NULL chunks
+// TODO: load from center out
 static void load_empty_chunks(struct World *self) {
+    size_t load_count = 0;
+
     for (size_t i = 0; i < (self->chunks_size * self->chunks_size); i++) {
-        // TODO: rate limit this per-frame
-        if (self->chunks[i] == NULL) {
+        if (self->chunks[i] == NULL && load_count < 3) {
             world_load_chunk(self, world_chunk_offset(self, i));
+            load_count++;
         }
     }
 }
@@ -127,7 +167,7 @@ static void load_empty_chunks(struct World *self) {
 // Centers the world's loaded chunks around the specified block position
 void world_set_center(struct World *self, ivec3s center_pos) {
     ivec3s new_offset = world_pos_to_offset(center_pos);
-    ivec3s new_origin = glms_ivec3_sub(new_offset, (ivec3s) {{ self->chunks_size / 2, 0, self->chunks_size / 2 }});
+    ivec3s new_origin = glms_ivec3_sub(new_offset, (ivec3s) {{ (self->chunks_size / 2) - 1, 0, (self->chunks_size / 2) - 1 }});
 
     if (!memcmp(&new_origin, &self->chunks_origin, sizeof(ivec3s))) {
         // Do nothing if the center chunk hasn't moved
@@ -163,8 +203,9 @@ void world_set_center(struct World *self, ivec3s center_pos) {
     load_empty_chunks(self);
 }
 
+
 void world_render(struct World *self) {
-    world_foreach(self, chunk) {
+    world_foreach_btf(self, chunk) {
         if (chunk != NULL) {
             chunk_render(chunk);
         }
@@ -174,6 +215,8 @@ void world_render(struct World *self) {
 }
 
 void world_update(struct World *self) {
+    load_empty_chunks(self);
+
     world_foreach(self, chunk) {
         if (chunk != NULL) {
             chunk_update(chunk);

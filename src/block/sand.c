@@ -6,6 +6,7 @@ static ivec2s get_texture_location(struct World *world, ivec3s pos, enum Directi
 
 void sand_init() {
     struct Block sand = BLOCK_DEFAULT;
+    sand.id = SAND;
     sand.get_texture_location = get_texture_location;
     BLOCKS[SAND] = sand;
 }

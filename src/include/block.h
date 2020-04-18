@@ -11,7 +11,9 @@ enum BlockId {
     GRASS = 1,
     DIRT = 2,
     STONE = 3,
-    SAND = 4
+    SAND = 4,
+    WATER = 5,
+    GLASS = 6
 };
 
 struct Block {

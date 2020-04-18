@@ -23,7 +23,7 @@ void player_update(struct EntityPlayer *self) {
 }
 
 bool raycast_block_fn(ivec3s v) {
-    return world_get_data(&state.world, v);
+    return world_get_data(&state.world, v) != 0;
 }
 
 void player_tick(struct EntityPlayer *self) {

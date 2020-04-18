@@ -34,6 +34,9 @@ void init() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     state.world.player.camera.position = (vec3s) {{ 0, 80, 0 }};
 }
 
@@ -47,6 +50,13 @@ void tick() {
 
     // Load chunks around the current camera position
     world_set_center(&state.world, world_pos_to_block(state.world.player.camera.position));
+
+    for (int x = 0; x < 32; x++)
+        for (int y = 64; y < 80; y++) {
+            world_set_data(&state.world, (ivec3s) {{ x, y, 0}}, GLASS);
+            world_set_data(&state.world, (ivec3s) {{ x, y, 4}}, GLASS);
+        }
+
 }
 
 void update() {

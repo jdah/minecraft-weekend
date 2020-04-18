@@ -185,6 +185,36 @@ glms_ivec3_dot(ivec3s a, ivec3s b) {
 }
 
 /*!
+ * @brief norm * norm (magnitude) of vec
+ *
+ * we can use this func instead of calling norm * norm, because it would call
+ * sqrtf fuction twice but with this func we can avoid func call, maybe this is
+ * not good name for this func
+ *
+ * @param[in] v vector
+ *
+ * @return norm * norm
+ */
+CGLM_INLINE
+int
+glms_ivec3_norm2(ivec3s v) {
+  return glm_ivec3_norm2(v.raw);
+}
+
+/*!
+ * @brief norm (magnitude) of vec3
+ *
+ * @param[in] v vector
+ *
+ * @return norm
+ */
+CGLM_INLINE
+int
+glms_ivec3_norm(ivec3s v) {
+  return glm_ivec3_norm(v.raw);
+}
+
+/*!
  * @brief add a vector to b vector store result in dest
  *
  * @param[in]  a    vector1

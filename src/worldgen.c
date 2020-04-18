@@ -110,7 +110,7 @@ void worldgen_generate(struct Chunk *chunk) {
                 OCEAN :
                 ((t < 0.08f && h < WATER_LEVEL + 2) ? BEACH : PLAINS));
 
-            for (int y = 0; y < h; y++) {
+            for (s32 y = 0; y < h; y++) {
                 enum BlockId block;
                 if (y == (h - 1)) {
                     // Determine top block according to biome
@@ -136,7 +136,11 @@ void worldgen_generate(struct Chunk *chunk) {
                 chunk_set_data(chunk, (ivec3s) {{ x, y, z }}, block);
             }
 
-            // TODO: water
+            // fill up to water level with water
+            for (s32 y = h; y < WATER_LEVEL; y++) {
+                chunk_set_data(chunk, (ivec3s) {{ x, y, z }}, WATER);
+            }
+
             // TODO: trees
             // TODO: flowers
         }

@@ -20,7 +20,9 @@ extern void air_init();
 extern void grass_init();
 extern void dirt_init();
 extern void stone_init();
-extern void sand_init();  
+extern void sand_init(); 
+extern void water_init();
+extern void glass_init();
 
 void block_init() {
     air_init();
@@ -28,4 +30,6 @@ void block_init() {
     dirt_init();
     stone_init();
     sand_init();
+    water_init();
+    glass_init();
 }
