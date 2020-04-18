@@ -86,8 +86,9 @@ void mesh_render(struct Mesh *self) {
     shader_uniform_mat4(state.shader, "m", glms_translate(glms_mat4_identity(), IVEC3S2V(self->chunk->position)));
     shader_uniform_texture2D(state.shader, "tex", state.atlas.texture, 0);
 
-    vao_attr(self->vao, self->vbo, 0, 3, GL_FLOAT, 5 * sizeof(f32), 0);
-    vao_attr(self->vao, self->vbo, 1, 2, GL_FLOAT, 5 * sizeof(f32), 3 * sizeof(f32));
+    vao_attr(self->vao, self->vbo, 0, 3, GL_FLOAT, 8 * sizeof(f32), 0 * sizeof(f32));
+    vao_attr(self->vao, self->vbo, 1, 2, GL_FLOAT, 8 * sizeof(f32), 3 * sizeof(f32));
+    vao_attr(self->vao, self->vbo, 2, 3, GL_FLOAT, 8 * sizeof(f32), 5 * sizeof(f32));
 
     vao_bind(self->vao);
     vbo_bind(self->ibo);
@@ -105,6 +106,30 @@ static void emit_face(
         mesh->data_buffer[mesh->data_index++] = position.z + vertex[2];
         mesh->data_buffer[mesh->data_index++] = uv_offset.x + (uv_unit.x * CUBE_UVS[(i * 2) + 0]);
         mesh->data_buffer[mesh->data_index++] = uv_offset.y + (uv_unit.y * CUBE_UVS[(i * 2) + 1]);
+
+        // TODO: lighting
+        // Vary color according to face direction
+        f32 color;
+        switch (direction) {
+            case UP:
+                color = 1.0f;
+                break;
+            case NORTH:
+            case SOUTH:
+                color = 0.92f;
+                break;
+            case EAST:
+            case WEST:
+                color = 0.86f;
+                break;
+            case DOWN:
+                color = 0.78f;
+                break;
+        }
+
+        for (size_t j = 0; j < 3; j++) {
+            mesh->data_buffer[mesh->data_index++] = color;
+        } 
     }
 
     // Emit indices

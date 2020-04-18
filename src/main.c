@@ -19,7 +19,8 @@ void init() {
         "res/shaders/basic.vs", "res/shaders/basic.fs",
         1, (struct VertexAttr[]) {
             { .index = 0, .name = "position" },
-            { .index = 1, .name = "uv" }
+            { .index = 1, .name = "uv" },
+            { .index = 2, .name = "color" }
         });
     state.atlas = atlas_create("res/images/blocks.png", (ivec2s) {{ 16, 16 }});
     world_init(&state.world);
