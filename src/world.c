@@ -117,6 +117,10 @@ void world_load_chunk(struct World *self, ivec3s offset) {
 }
 
 void world_init(struct World *self) {
+    memset(self, 0, sizeof(struct World));
+    self->throttles.load.max = 2;
+    self->throttles.mesh.max = 2;
+
     player_init(&self->player, self);
     self->chunks_size = 16;
     self->chunks = calloc(1, self->chunks_size * self->chunks_size * sizeof(struct Chunk *));
@@ -154,12 +158,11 @@ u32 world_get_data(struct World *self, ivec3s pos) {
 // Attempt to load any NULL chunks
 // TODO: load from center out
 static void load_empty_chunks(struct World *self) {
-    size_t load_count = 0;
-
     for (size_t i = 0; i < (self->chunks_size * self->chunks_size); i++) {
-        if (self->chunks[i] == NULL && load_count < 3) {
+        if (self->chunks[i] == NULL &&
+            self->throttles.load.count < self->throttles.load.max) {
             world_load_chunk(self, world_chunk_offset(self, i));
-            load_count++;
+            self->throttles.load.count++;
         }
     }
 }
@@ -205,10 +208,10 @@ void world_set_center(struct World *self, ivec3s center_pos) {
 
 
 void world_render(struct World *self) {
-    world_foreach_btf(self, c0) {
-        if (c0 != NULL) {
-            chunk_render(c0);
-            chunk_render_transparent(c0);
+    world_foreach_btf(self, c) {
+        if (c != NULL) {
+            chunk_render(c);
+            chunk_render_transparent(c);
         }
     }
 
@@ -216,6 +219,10 @@ void world_render(struct World *self) {
 }
 
 void world_update(struct World *self) {
+    // Reset per-frame throttles
+    self->throttles.load.count = 0;
+    self->throttles.mesh.count = 0;
+
     load_empty_chunks(self);
 
     world_foreach(self, chunk) {

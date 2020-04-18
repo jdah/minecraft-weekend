@@ -43,7 +43,7 @@ struct Chunk {
     u32 *data;
 
     // if true, this chunk will re-mesh next frame
-    bool dirty
+    bool dirty;
 
     // if true, this chunk will do a transparency depth sort next frame
     bool depth_sort;

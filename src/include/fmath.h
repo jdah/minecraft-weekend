@@ -47,6 +47,8 @@
     __typeof__ (mx) _mx = (mx); \
     max(_mn, min(_mx, _x)); })
 
+int ivec3scmp(ivec3s a, ivec3s b);
+
 struct Ray {
     vec3s origin, direction;
 };

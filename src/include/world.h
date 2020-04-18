@@ -19,6 +19,13 @@ struct World {
 
     // Bottom-left offset of chunks array and offset of the center chunk
     ivec3s chunks_origin, center_offset;
+
+    // Per-frame throttles on certain world operations
+    struct {
+        struct {
+            size_t count, max;
+        } load, mesh;
+    } throttles;
 };
 
 // see worldgen.c

@@ -1,6 +1,10 @@
 #include "include/fmath.h"
 #include "include/util.h"
 
+int ivec3scmp(ivec3s a, ivec3s b) {
+    return memcmp(&a, &b, sizeof(ivec3s));
+}
+
 // finds the smallest possible t such that s + t * ds is an integer
 static vec3s intbound(vec3s s, vec3s ds) {
     vec3s v;

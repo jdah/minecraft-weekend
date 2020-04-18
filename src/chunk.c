@@ -54,7 +54,7 @@ struct {
     f32 data[DATA_BUFFER_SIZE];
     u16 indices[INDICES_BUFFER_SIZE];
     struct Face faces[FACES_BUFFER_SIZE];
-} global_buffers[2];
+} global_buffers[3];
 
 void mesh_init(struct Mesh *self, struct Chunk *chunk) {
     memset(self, 0, sizeof(struct Mesh));
@@ -83,39 +83,6 @@ void mesh_destroy(struct Mesh *self) {
     vbo_destroy(self->ibo);
 }
 
-void buffer_set_persist(struct MeshBuffer *self, bool persist) {
-    if (persist == self->persist) {
-        return;
-    }
-
-    if (persist) {
-        assert(self->capacity > 0);
-        self->data = malloc(self->capacity);
-        assert(self->data != NULL);
-    } else {
-        free(self->data);
-        self->data = NULL;
-    }
-
-    self->persist = persist;
-}
-
-void mesh_set_depth_sort(struct Mesh *self, bool depth_sort) {
-    if (depth_sort == self->depth_sort) {
-        return;
-    }
-
-    if (depth_sort) {
-        buffer_set_persist(&self->faces, true);
-        buffer_set_persist(&self->indices, true);
-    } else {
-        buffer_set_persist(&self->faces, false);
-        buffer_set_persist(&self->indices, false);
-    }
-
-    self->depth_sort = depth_sort;
-}
-
 static int _depth_sort_cmp(vec3s *center, const struct Face *a, const struct Face *b) {
     return (int) -sign(
         glms_vec3_norm2(glms_vec3_sub(*center, a->position)) -
@@ -123,26 +90,20 @@ static int _depth_sort_cmp(vec3s *center, const struct Face *a, const struct Fac
 }
 
 void mesh_depth_sort(struct Mesh *self, vec3s center) {
-    assert(self->depth_sort);
-    assert(self->indices.persist);
-    assert(self->faces.persist);
-
     // sort faces
     qsort_r(
         self->faces.data, self->faces.count, sizeof(struct Face), &center,
         (int (*)(void*, const void*, const void*)) _depth_sort_cmp);
 
     // reorder indices according to face ordering
-    u16 *t = global_buffers[0].indices;
+    u16 *t = global_buffers[2].indices;
     for (size_t i = 0; i < self->faces.count; i++) {
         struct Face *face = &((struct Face*) self->faces.data)[i];
         memcpy(&t[i * 6], &((u16*) self->indices.data)[face->indices_base], 6 * sizeof(u16));
         face->indices_base = i * 6;
     }
 
-    // buffer
     memcpy(self->indices.data, t, self->indices.count * sizeof(u16));
-    vbo_buffer(self->ibo, self->indices.data, 0, self->indices.count * sizeof(u16));
 }
 
 void mesh_prepare(struct Mesh *self, size_t global_buffers_index) {
@@ -156,20 +117,15 @@ void mesh_prepare(struct Mesh *self, size_t global_buffers_index) {
         struct MeshBuffer *buffer = buffers[i];
         buffer->count = 0;
         buffer->index = 0;
-        
-        if (!buffer->persist) {
-            buffer->data = ((void*[3]) {
-                global_buffers[global_buffers_index].data,
-                global_buffers[global_buffers_index].indices,
-                global_buffers[global_buffers_index].faces,
-            })[i];
-        }
-
-        // if persisted, then buffers have their own malloc'd memmory
+        buffer->data = ((void*[3]) {
+            global_buffers[global_buffers_index].data,
+            global_buffers[global_buffers_index].indices,
+            global_buffers[global_buffers_index].faces,
+        })[i];
     }
 }
 
-void mesh_finalize(struct Mesh *self) {
+void mesh_finalize(struct Mesh *self, bool depth_sort) {
     struct MeshBuffer *buffers[3] = {
         &self->data, &self->indices, &self->faces
     };
@@ -182,6 +138,12 @@ void mesh_finalize(struct Mesh *self) {
     }
 
     vbo_buffer(self->vbo, self->data.data, 0, (self->data.count) * sizeof(f32));
+
+    // sort indices before buffering if this mesh requires depth sorting
+    if (depth_sort) {
+        mesh_depth_sort(self, self->chunk->world->player.camera.position);
+    }
+
     vbo_buffer(self->ibo, self->indices.data, 0, (self->indices.count) * sizeof(u16));
 }
  
@@ -335,8 +297,16 @@ u32 chunk_get_data(struct Chunk *self, ivec3s pos) {
     return self->data[chunk_pos_to_index(pos)];
 }
 
-static void mesh(struct Chunk *self) {
-    mesh_prepare(&self->meshes.base, 0);
+enum MeshPass {
+    FULL,
+    TRANSPARENCY
+};
+
+static void mesh(struct Chunk *self, enum MeshPass pass) {
+    if (pass == FULL) {
+        mesh_prepare(&self->meshes.base, 0);
+    }
+
     mesh_prepare(&self->meshes.transparent, 1);
 
     chunk_foreach(pos) {
@@ -359,7 +329,8 @@ static void mesh(struct Chunk *self) {
                 }
 
                 bool neighbor_transparent = neighbor_block.is_transparent(self->world, wneighbor);
-                if (neighbor_transparent && (!transparent ||
+                if (neighbor_transparent && (
+                    (pass == FULL && !transparent) ||
                     (transparent && neighbor_block.id != block.id))) {
                     emit_face(
                         transparent ? &self->meshes.transparent : &self->meshes.base, fpos, d,
@@ -370,21 +341,24 @@ static void mesh(struct Chunk *self) {
         }
     }
 
-    mesh_finalize(&self->meshes.base);
-    mesh_finalize(&self->meshes.transparent);
+    if (pass == FULL) {
+        mesh_finalize(&self->meshes.base, false);
+    }
+
+    mesh_finalize(&self->meshes.transparent, true);
 }
 
 void chunk_render(struct Chunk *self) {
-    if (self->dirty) {
-        mesh(self);
+    if ((self->dirty || self->depth_sort) &&
+        self->world->throttles.mesh.count < self->world->throttles.mesh.max) {
+        mesh(self, self->dirty ? FULL : TRANSPARENCY);
+
         self->dirty = false;
+        self->depth_sort = false;
+        self->world->throttles.mesh.count++;
     }
 
     mesh_render(&self->meshes.base);
-
-    if (self->meshes.transparent.depth_sort) {
-        mesh_depth_sort(&self->meshes.transparent, self->world->player.camera.position);
-    }
 }
 
 void chunk_render_transparent(struct Chunk *self) {
@@ -392,13 +366,13 @@ void chunk_render_transparent(struct Chunk *self) {
 }
 
 void chunk_update(struct Chunk *self) {
-    ivec3s player_offset = world_pos_to_offset(
-        world_pos_to_block(self->world->player.camera.position));
-
-    // Depth sort the transparent mesh if the player is inside of this chunk
-    mesh_set_depth_sort(
-        &self->meshes.transparent,
-        !memcmp(&player_offset, &self->offset, sizeof(ivec3s)));
+    // Depth sort the transparent mesh if
+    // (1) the player is inside of this chunk and their block position changed
+    // (2) the player has moved chunks
+    struct EntityPlayer *player = &self->world->player;
+    self->depth_sort =
+        (!ivec3scmp(self->offset, player->offset) && player->block_pos_changed) ||
+        player->offset_changed;
 }
 
 void chunk_tick(struct Chunk *self) {

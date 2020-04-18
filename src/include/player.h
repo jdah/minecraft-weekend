@@ -14,6 +14,13 @@ struct EntityPlayer {
     bool has_look_block;
     ivec3s look_block;
     enum Direction look_face;
+
+    // Player's current chunk offset, block position
+    ivec3s offset;
+    ivec3s block_pos;
+
+    // true if offset or block position changed since the last update()
+    bool offset_changed, block_pos_changed;
 };
 
 void player_init(struct EntityPlayer *self, struct World *world);

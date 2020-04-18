@@ -20,6 +20,23 @@ void player_update(struct EntityPlayer *self) {
     camera_update(&self->camera);
     self->camera.pitch -= state.window->mouse.delta.y / (((f32) state.window->frame_delta) / (mouse_sensitivity * 10000.0f));
     self->camera.yaw -= state.window->mouse.delta.x / (((f32) state.window->frame_delta) / (mouse_sensitivity * 10000.0f));
+
+    ivec3s block_pos = world_pos_to_block(self->camera.position);
+    ivec3s offset = world_pos_to_offset(block_pos);
+
+    if (ivec3scmp(block_pos, self->block_pos)) {
+        self->block_pos = block_pos;
+        self->block_pos_changed = true;
+    } else {
+        self->block_pos_changed = false;
+    }
+
+    if (ivec3scmp(offset, self->offset)) {
+        self->offset = offset;
+        self->offset_changed = true;
+    } else {
+        self->offset_changed = false;
+    }
 }
 
 bool raycast_block_fn(ivec3s v) {
