@@ -44,19 +44,37 @@ const f32 CUBE_UVS[] = {
     1, 1
 };
 
+#define DATA_BUFFER_SIZE (16 * 256 * 16) * 8 * 5 * sizeof(f32)
+#define INDICES_BUFFER_SIZE (16 * 256 * 16) * 36 * sizeof(u16)
+#define FACES_BUFFER_SIZE (16 * 256 * 16) * 96 * sizeof(u16)
+
 // global mesh data buffers
 // TODO: if threading is introduced, make these per-thread
 struct {
-    f32 data[(16 * 256 * 16) * 8 * 5 * sizeof(f32)];
-    u16 indices[(16 * 256 * 16) * 36 * sizeof(u16)];
-} buffers[7];
+    f32 data[DATA_BUFFER_SIZE];
+    u16 indices[INDICES_BUFFER_SIZE];
+    struct Face faces[FACES_BUFFER_SIZE];
+} global_buffers[2];
 
 void mesh_init(struct Mesh *self, struct Chunk *chunk) {
     memset(self, 0, sizeof(struct Mesh));
     self->chunk = chunk;
     self->vao = vao_create();
     self->vbo = vbo_create(GL_ARRAY_BUFFER, false);
-    self->ibo = vbo_create(GL_ELEMENT_ARRAY_BUFFER, false);   
+    self->ibo = vbo_create(GL_ELEMENT_ARRAY_BUFFER, false);
+
+    // Set buffer capacities
+    struct MeshBuffer *buffers[3] = {
+        &self->data, &self->indices, &self->faces
+    };
+
+    for (size_t i = 0; i < 3; i++) {
+        buffers[i]->capacity = ((size_t[3]) {
+            DATA_BUFFER_SIZE,
+            INDICES_BUFFER_SIZE,
+            FACES_BUFFER_SIZE
+        })[i];
+    }
 }
 
 void mesh_destroy(struct Mesh *self) {
@@ -65,84 +83,106 @@ void mesh_destroy(struct Mesh *self) {
     vbo_destroy(self->ibo);
 }
 
-void buffer_prepare(struct MeshBuffer *self, f32 *data, u16 *indices) {
-    memset(self, 0, sizeof(struct MeshBuffer));
-    self->data_buffer = data;
-    self->index_buffer = indices;
+void buffer_set_persist(struct MeshBuffer *self, bool persist) {
+    if (persist == self->persist) {
+        return;
+    }
+
+    if (persist) {
+        assert(self->capacity > 0);
+        self->data = malloc(self->capacity);
+        assert(self->data != NULL);
+    } else {
+        free(self->data);
+        self->data = NULL;
+    }
+
+    self->persist = persist;
 }
 
-void mesh_prepare(struct Mesh *self) {
-    for (size_t i = 0; i < 7; i++) {
-        buffer_prepare(&self->buffers[i], buffers[i].data, buffers[i].indices);
+void mesh_set_depth_sort(struct Mesh *self, bool depth_sort) {
+    if (depth_sort == self->depth_sort) {
+        return;
+    }
+
+    if (depth_sort) {
+        buffer_set_persist(&self->faces, true);
+        buffer_set_persist(&self->indices, true);
+    } else {
+        buffer_set_persist(&self->faces, false);
+        buffer_set_persist(&self->indices, false);
+    }
+
+    self->depth_sort = depth_sort;
+}
+
+static int _depth_sort_cmp(vec3s *center, const struct Face *a, const struct Face *b) {
+    return (int) -sign(
+        glms_vec3_norm2(glms_vec3_sub(*center, a->position)) -
+        glms_vec3_norm2(glms_vec3_sub(*center, b->position)));
+}
+
+void mesh_depth_sort(struct Mesh *self, vec3s center) {
+    assert(self->depth_sort);
+    assert(self->indices.persist);
+    assert(self->faces.persist);
+
+    // sort faces
+    qsort_r(
+        self->faces.data, self->faces.count, sizeof(struct Face), &center,
+        (int (*)(void*, const void*, const void*)) _depth_sort_cmp);
+
+    // reorder indices according to face ordering
+    u16 *t = global_buffers[0].indices;
+    for (size_t i = 0; i < self->faces.count; i++) {
+        struct Face *face = &((struct Face*) self->faces.data)[i];
+        memcpy(&t[i * 6], &((u16*) self->indices.data)[face->indices_base], 6 * sizeof(u16));
+        face->indices_base = i * 6;
+    }
+
+    // buffer
+    memcpy(self->indices.data, t, self->indices.count * sizeof(u16));
+    vbo_buffer(self->ibo, self->indices.data, 0, self->indices.count * sizeof(u16));
+}
+
+void mesh_prepare(struct Mesh *self, size_t global_buffers_index) {
+    self->vertex_count = 0;
+
+    struct MeshBuffer *buffers[3] = {
+        &self->data, &self->indices, &self->faces
+    };
+
+    for (size_t i = 0; i < 3; i++) {
+        struct MeshBuffer *buffer = buffers[i];
+        buffer->count = 0;
+        buffer->index = 0;
+        
+        if (!buffer->persist) {
+            buffer->data = ((void*[3]) {
+                global_buffers[global_buffers_index].data,
+                global_buffers[global_buffers_index].indices,
+                global_buffers[global_buffers_index].faces,
+            })[i];
+        }
+
+        // if persisted, then buffers have their own malloc'd memmory
     }
 }
 
 void mesh_finalize(struct Mesh *self) {
-    // Reverse the order of indices in the negative-facing transparency direcetions.
-    // Since traversal/render order is positive we need these to appear front to back
-    // in their own respective direction.
-    for (enum Direction d = 0; d < 6; d++) {
-        struct MeshBuffer *buffer = &self->buffers[1 + d];
-        if (d == NORTH || d == WEST || d == UP) {
-            const size_t sz = 6 * sizeof(u16);
-            void *a = buffer->index_buffer;
-            size_t len = (buffer->indices_index / 6);
-            
-            if (len == 0) {
-                continue;
-            }
+    struct MeshBuffer *buffers[3] = {
+        &self->data, &self->indices, &self->faces
+    };
 
-            size_t i = len - 1, j = 0;
-
-            while (i > j) {
-                u16 t[6];
-
-                // swap a[i] and a[j]
-                memcpy(t, a + (i * sz), sz);
-                memcpy(a + (i * sz), a + (j * sz), sz);
-                memcpy(a + (j * sz), t, sz);
-                
-                i--;
-                j++;
-            }
-
-            // printf("%zu\n", buffer->indices_index * 2);
-            // memset(buffer->index_buffer, 0, buffer->indices_index * sizeof(u16));
-            // buffer->index_buffer[0] = 4586;
-            // buffer->indices_index = 6;
-            // memset(buffer->data_buffer, 0, buffer->data_index * sizeof(f32));
-        }
+    // Flip each buffer
+    for (size_t i = 0; i < 3; i++) {
+        struct MeshBuffer *buffer = buffers[i];
+        buffer->count = buffer->index;
+        buffer->index = 0;
     }
 
-    size_t data_len = 0, indices_len = 0;
-
-    for (size_t i = 0; i < 7; i++) {
-        data_len += self->buffers[i].data_index;
-        indices_len += self->buffers[i].indices_index;
-    }
-
-    // Move data into two contiguous buffers
-    f32 *data = (f32*) malloc((data_len * sizeof(f32)) + (indices_len * sizeof(u16)));
-    u16 *indices = (u16*) (data + data_len);
-
-    size_t di = 0, ii = 0, vc = 0;
-    for (size_t i = 0; i < 7; i++) {
-        memcpy(data + di, self->buffers[i].data_buffer, self->buffers[i].data_index * sizeof(f32));
-        memcpy(indices + ii, self->buffers[i].index_buffer, self->buffers[i].indices_index * sizeof(u16));
-
-        self->buffers[i].indices_offset = ii;
-        self->buffers[i].indices_base = vc;
-        self->buffers[i].indices_count = self->buffers[i].indices_index;
-
-        vc += self->buffers[i].vertex_count;
-        di += self->buffers[i].data_index;
-        ii += self->buffers[i].indices_index;
-    }
-
-    vbo_buffer(self->vbo, data, 0, di * sizeof(f32));
-    vbo_buffer(self->ibo, indices, 0, ii * sizeof(u16));
-
-    free(data);
+    vbo_buffer(self->vbo, self->data.data, 0, (self->data.count) * sizeof(f32));
+    vbo_buffer(self->ibo, self->indices.data, 0, (self->indices.count) * sizeof(u16));
 }
  
 void mesh_render(struct Mesh *self) {
@@ -158,30 +198,33 @@ void mesh_render(struct Mesh *self) {
 
     vao_bind(self->vao);
     vbo_bind(self->ibo);
-
-    for (size_t i = 0; i < 7; i++) {
-        struct MeshBuffer buffer = self->buffers[i];
-        if (buffer.indices_count > 0) {
-            if (i > 0) glDepthMask(GL_FALSE);
-            glDrawElementsBaseVertex(
-                GL_TRIANGLES, buffer.indices_count,
-                GL_UNSIGNED_SHORT, buffer.indices_offset * sizeof(u16), buffer.indices_base);
-            if (i > 0) glDepthMask(GL_TRUE);
-        }
-    }
+    glDrawElements(GL_TRIANGLES, self->indices.count, GL_UNSIGNED_SHORT, NULL);
 }
 
 static void emit_face(
-    struct MeshBuffer *buffer, vec3s position, enum Direction direction, 
+    struct Mesh *mesh, vec3s position, enum Direction direction, 
     vec2s uv_offset, vec2s uv_unit, bool transparent) {
+    // add this face into the face buffer if it's transparent
+    if (transparent) {
+        struct Face face = {
+            .indices_base = mesh->indices.index,
+            .position = position
+        };
+
+        memcpy(
+            ((struct Face *) mesh->faces.data) + (mesh->faces.index),
+            &face, sizeof(struct Face));
+        mesh->faces.index++;
+    }
+
     // Emit vertices
     for (size_t i = 0; i < 4;  i++) {
         const f32 *vertex = &CUBE_VERTICES[CUBE_INDICES[(direction * 6) + UNIQUE_INDICES[i]] * 3];
-        buffer->data_buffer[buffer->data_index++] = position.x + vertex[0];
-        buffer->data_buffer[buffer->data_index++] = position.y + vertex[1];
-        buffer->data_buffer[buffer->data_index++] = position.z + vertex[2];
-        buffer->data_buffer[buffer->data_index++] = uv_offset.x + (uv_unit.x * CUBE_UVS[(i * 2) + 0]);
-        buffer->data_buffer[buffer->data_index++] = uv_offset.y + (uv_unit.y * CUBE_UVS[(i * 2) + 1]);
+        ((f32*) mesh->data.data)[mesh->data.index++] = position.x + vertex[0];
+        ((f32*) mesh->data.data)[mesh->data.index++] = position.y + vertex[1];
+        ((f32*) mesh->data.data)[mesh->data.index++] = position.z + vertex[2];
+        ((f32*) mesh->data.data)[mesh->data.index++] = uv_offset.x + (uv_unit.x * CUBE_UVS[(i * 2) + 0]);
+        ((f32*) mesh->data.data)[mesh->data.index++] = uv_offset.y + (uv_unit.y * CUBE_UVS[(i * 2) + 1]);
 
         // TODO: real lighting
         // Vary color according to face direction
@@ -208,17 +251,17 @@ static void emit_face(
         }
 
         for (size_t j = 0; j < 3; j++) {
-            buffer->data_buffer[buffer->data_index++] = color;
+            ((f32*) mesh->data.data)[mesh->data.index++] = color;
         } 
     }
 
     // Emit indices
     for (size_t i = 0; i < 6; i++) {
-        buffer->index_buffer[buffer->indices_index++] = buffer->vertex_count + FACE_INDICES[i];
+        ((u16*) mesh->indices.data)[mesh->indices.index++] = mesh->vertex_count + FACE_INDICES[i];
     }
 
     // Emitted 4 more vertices, bump the vertex count
-    buffer->vertex_count += 4;
+    mesh->vertex_count += 4;
 }
 
 void chunk_init(struct Chunk *self, struct World *world, ivec3s offset) {
@@ -227,12 +270,14 @@ void chunk_init(struct Chunk *self, struct World *world, ivec3s offset) {
     self->offset = offset;
     self->position = glms_ivec3_mul(offset, CHUNK_SIZE);
     self->data = calloc(1, CHUNK_VOLUME * sizeof(u32));
-    mesh_init(&self->mesh, self);
+    mesh_init(&self->meshes.base, self);
+    mesh_init(&self->meshes.transparent, self);
 }
 
 void chunk_destroy(struct Chunk *self) {
     free(self->data);
-    mesh_destroy(&self->mesh);
+    mesh_destroy(&self->meshes.base);
+    mesh_destroy(&self->meshes.transparent);
 }
 
 // returns true if pos is within chunk boundaries
@@ -291,7 +336,8 @@ u32 chunk_get_data(struct Chunk *self, ivec3s pos) {
 }
 
 static void mesh(struct Chunk *self) {
-    mesh_prepare(&self->mesh);
+    mesh_prepare(&self->meshes.base, 0);
+    mesh_prepare(&self->meshes.transparent, 1);
 
     chunk_foreach(pos) {
         vec3s fpos = IVEC3S2V(pos);
@@ -316,15 +362,16 @@ static void mesh(struct Chunk *self) {
                 if (neighbor_transparent && (!transparent ||
                     (transparent && neighbor_block.id != block.id))) {
                     emit_face(
-                        &self->mesh.buffers[transparent ? (1 + d) : 0], fpos, d,
+                        transparent ? &self->meshes.transparent : &self->meshes.base, fpos, d,
                         atlas_offset(state.atlas, BLOCKS[data].get_texture_location(self->world, wpos, d)),
-                        state.atlas.sprite_unit, false);
+                        state.atlas.sprite_unit, transparent);
                 }
             }
         }
     }
 
-    mesh_finalize(&self->mesh);
+    mesh_finalize(&self->meshes.base);
+    mesh_finalize(&self->meshes.transparent);
 }
 
 void chunk_render(struct Chunk *self) {
@@ -333,11 +380,25 @@ void chunk_render(struct Chunk *self) {
         self->dirty = false;
     }
 
-    mesh_render(&self->mesh);
+    mesh_render(&self->meshes.base);
+
+    if (self->meshes.transparent.depth_sort) {
+        mesh_depth_sort(&self->meshes.transparent, self->world->player.camera.position);
+    }
+}
+
+void chunk_render_transparent(struct Chunk *self) {
+    mesh_render(&self->meshes.transparent);
 }
 
 void chunk_update(struct Chunk *self) {
+    ivec3s player_offset = world_pos_to_offset(
+        world_pos_to_block(self->world->player.camera.position));
 
+    // Depth sort the transparent mesh if the player is inside of this chunk
+    mesh_set_depth_sort(
+        &self->meshes.transparent,
+        !memcmp(&player_offset, &self->offset, sizeof(ivec3s)));
 }
 
 void chunk_tick(struct Chunk *self) {

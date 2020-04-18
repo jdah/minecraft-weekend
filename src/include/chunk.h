@@ -12,23 +12,21 @@
 
 #define CHUNK_VOLUME (CHUNK_SIZE.x * CHUNK_SIZE.y * CHUNK_SIZE.z)
 
+struct Face {
+    size_t indices_base;
+    vec3s position;
+};
+
 struct MeshBuffer {
-    // current number of vertices buffered and current buffer indices
-    size_t vertex_count, data_index, indices_index;
-
-    // intermediate buffers to write to while rendering
-    f32 *data_buffer;
-    u16 *index_buffer;
-
-    // offset and count for rendering
-    size_t indices_base, indices_offset, indices_count;
+    void *data;
+    size_t index, count, capacity;
 };
 
 struct Mesh {
     struct Chunk *chunk;
 
-    // 7 separate buffers: 1 base (normal) and then 6 for each transparency direction
-    struct MeshBuffer buffers[7];
+    struct MeshBuffer data, faces, indices;
+    size_t vertex_count;
 
     // buffer objects
     struct VAO vao;
@@ -45,8 +43,14 @@ struct Chunk {
     u32 *data;
 
     // if true, this chunk will re-mesh next frame
-    bool dirty;
-    struct Mesh mesh;
+    bool dirty
+
+    // if true, this chunk will do a transparency depth sort next frame
+    bool depth_sort;
+    
+    struct {
+        struct Mesh base, transparent;
+    } meshes;
 };
 
 void chunk_init(struct Chunk *self, struct World *world, ivec3s offset);
@@ -54,6 +58,7 @@ void chunk_destroy(struct Chunk *self);
 void chunk_set_data(struct Chunk *self, ivec3s pos, u32 data);
 u32 chunk_get_data(struct Chunk *self, ivec3s pos);
 void chunk_render(struct Chunk *self);
+void chunk_render_transparent(struct Chunk *self);
 void chunk_update(struct Chunk *self);
 void chunk_tick(struct Chunk *self);
 

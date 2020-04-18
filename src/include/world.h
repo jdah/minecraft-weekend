@@ -28,6 +28,7 @@ bool world_in_bounds(struct World *self, ivec3s pos);
 bool world_contains(struct World *self, ivec3s pos);
 struct Chunk *world_get_chunk(struct World *self, ivec3s offset);
 ivec3s world_pos_to_block(vec3s pos);
+ivec3s world_pos_to_offset(ivec3s pos);
 
 void world_init(struct World *self);
 void world_destroy(struct World *self);

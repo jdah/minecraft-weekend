@@ -205,9 +205,10 @@ void world_set_center(struct World *self, ivec3s center_pos) {
 
 
 void world_render(struct World *self) {
-    world_foreach_btf(self, chunk) {
-        if (chunk != NULL) {
-            chunk_render(chunk);
+    world_foreach_btf(self, c0) {
+        if (c0 != NULL) {
+            chunk_render(c0);
+            chunk_render_transparent(c0);
         }
     }
 
