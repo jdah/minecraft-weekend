@@ -21,7 +21,7 @@ struct MeshBuffer {
     u16 *index_buffer;
 
     // offset and count for rendering
-    size_t indices_offset, indices_count;
+    size_t indices_base, indices_offset, indices_count;
 };
 
 struct Mesh {

@@ -34,8 +34,8 @@ void init() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     state.world.player.camera.position = (vec3s) {{ 0, 80, 0 }};
 }
@@ -56,6 +56,8 @@ void tick() {
             world_set_data(&state.world, (ivec3s) {{ x, y, 0}}, GLASS);
             world_set_data(&state.world, (ivec3s) {{ x, y, 4}}, GLASS);
         }
+
+    world_set_data(&state.world, (ivec3s) {{ 40, 80, 4}}, GLASS);
 
 }
 

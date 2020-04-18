@@ -83,7 +83,7 @@ void mesh_finalize(struct Mesh *self) {
     // in their own respective direction.
     for (enum Direction d = 0; d < 6; d++) {
         struct MeshBuffer *buffer = &self->buffers[1 + d];
-        // if (d == NORTH || d == WEST || d == DOWN) {
+        if (d == NORTH || d == WEST || d == UP) {
             const size_t sz = 6 * sizeof(u16);
             void *a = buffer->index_buffer;
             size_t len = (buffer->indices_index / 6);
@@ -101,17 +101,17 @@ void mesh_finalize(struct Mesh *self) {
                 memcpy(t, a + (i * sz), sz);
                 memcpy(a + (i * sz), a + (j * sz), sz);
                 memcpy(a + (j * sz), t, sz);
-                memset(a + (j * sz), 0, sz);
-                memset(a + (i * sz), 0, sz);
-                // printf("swap!  %d, %d\n", i, j);
                 
                 i--;
-                j++; 
+                j++;
             }
 
-            memset(buffer->index_buffer, 0, buffer->indices_index * 3);
+            // printf("%zu\n", buffer->indices_index * 2);
+            // memset(buffer->index_buffer, 0, buffer->indices_index * sizeof(u16));
+            // buffer->index_buffer[0] = 4586;
+            // buffer->indices_index = 6;
             // memset(buffer->data_buffer, 0, buffer->data_index * sizeof(f32));
-        // }
+        }
     }
 
     size_t data_len = 0, indices_len = 0;
@@ -130,7 +130,8 @@ void mesh_finalize(struct Mesh *self) {
         memcpy(data + di, self->buffers[i].data_buffer, self->buffers[i].data_index * sizeof(f32));
         memcpy(indices + ii, self->buffers[i].index_buffer, self->buffers[i].indices_index * sizeof(u16));
 
-        self->buffers[i].indices_offset = vc;
+        self->buffers[i].indices_offset = ii;
+        self->buffers[i].indices_base = vc;
         self->buffers[i].indices_count = self->buffers[i].indices_index;
 
         vc += self->buffers[i].vertex_count;
@@ -151,7 +152,6 @@ void mesh_render(struct Mesh *self) {
     shader_uniform_texture2D(state.shader, "tex", state.atlas.texture, 0);
 
     const size_t vertex_size = 8 * sizeof(f32);
-
     vao_attr(self->vao, self->vbo, 0, 3, GL_FLOAT, vertex_size, 0 * sizeof(f32));
     vao_attr(self->vao, self->vbo, 1, 2, GL_FLOAT, vertex_size, 3 * sizeof(f32));
     vao_attr(self->vao, self->vbo, 2, 3, GL_FLOAT, vertex_size, 5 * sizeof(f32));
@@ -162,9 +162,11 @@ void mesh_render(struct Mesh *self) {
     for (size_t i = 0; i < 7; i++) {
         struct MeshBuffer buffer = self->buffers[i];
         if (buffer.indices_count > 0) {
+            if (i > 0) glDepthMask(GL_FALSE);
             glDrawElementsBaseVertex(
                 GL_TRIANGLES, buffer.indices_count,
-                GL_UNSIGNED_SHORT, 0, buffer.indices_offset);
+                GL_UNSIGNED_SHORT, buffer.indices_offset * sizeof(u16), buffer.indices_base);
+            if (i > 0) glDepthMask(GL_TRUE);
         }
     }
 }
