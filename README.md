@@ -1,5 +1,7 @@
 # Minecraft, but I made it in 48 hours.
 
+![screenshot](screenshots/1.png)
+
 ##### Features:
 - Infinite, procedurally generated world
 - "Biomes"
