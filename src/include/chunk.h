@@ -15,6 +15,7 @@
 struct Face {
     size_t indices_base;
     vec3s position;
+    f32 distance;
 };
 
 struct MeshBuffer {
@@ -52,6 +53,9 @@ struct Chunk {
         struct Mesh base, transparent;
     } meshes;
 };
+
+
+bool chunk_in_bounds(ivec3s pos);
 
 void chunk_init(struct Chunk *self, struct World *world, ivec3s offset);
 void chunk_destroy(struct Chunk *self);

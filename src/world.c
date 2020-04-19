@@ -121,8 +121,11 @@ void world_init(struct World *self) {
     self->throttles.load.max = 2;
     self->throttles.mesh.max = 2;
 
+    self->unloaded_data.capacity = 64;
+    self->unloaded_data.list = malloc(self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
+
     player_init(&self->player, self);
-    self->chunks_size = 16;
+    self->chunks_size = 24;
     self->chunks = calloc(1, self->chunks_size * self->chunks_size * sizeof(struct Chunk *));
     world_set_center(self, GLMS_IVEC3_ZERO);
 }
@@ -140,10 +143,38 @@ void world_destroy(struct World *self) {
     free(self->chunks);
 }
 
+void world_append_unloaded_data(struct World *self, ivec3s pos, u32 data) {
+    if (self->unloaded_data.size + 1 == self->unloaded_data.capacity) {
+        self->unloaded_data.capacity *= 2;
+        self->unloaded_data.list = realloc(
+            self->unloaded_data.list,
+            self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
+    }
+
+    self->unloaded_data.list[self->unloaded_data.size++] = (struct WorldUnloadedData) {
+        .pos = pos,
+        .data = data
+    };
+}
+
+void world_remove_unloaded_data(struct World *self, size_t i) {
+    assert(i >= 0 && i < self->unloaded_data.size);
+    self->unloaded_data.size--;
+
+    if (i != self->unloaded_data.size) {
+        memmove(
+            self->unloaded_data.list + (i + 0),
+            self->unloaded_data.list + (i + 1),
+            (self->unloaded_data.size - i) * sizeof(struct WorldUnloadedData));
+    }
+}
+
 void world_set_data(struct World *self, ivec3s pos, u32 data) {
     ivec3s offset = world_pos_to_offset(pos);
     if (world_contains_chunk(self, offset)) {
         chunk_set_data(world_get_chunk(self, offset), world_pos_to_chunk_pos(pos), data);
+    } else {
+        world_append_unloaded_data(self, pos, data);
     }
 }
 
@@ -211,7 +242,11 @@ void world_render(struct World *self) {
     world_foreach_btf(self, c) {
         if (c != NULL) {
             chunk_render(c);
+
+            // TODO: this is a hack to get roses to work, they need to emit the proper indices
+            glDisable(GL_CULL_FACE);
             chunk_render_transparent(c);
+            glEnable(GL_CULL_FACE);
         }
     }
 

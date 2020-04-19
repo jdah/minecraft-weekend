@@ -5,7 +5,13 @@
 
 #define SRAND(seed) srand(seed)
 #define RAND(min, max) ((rand() % (max - min + 1)) + min)
-#define RANDCHANCE(chance) ((RAND(0, 100) / 100.0f) <= chance)
+#define RANDCHANCE(chance) ((RAND(0, 100000) / 100000.0) <= chance)
+
+#define RADIAL2I(c, r, v)\
+    (glms_vec2_norm(glms_vec2_sub(IVEC2S2V((c)), IVEC2S2V((v)))) / glms_vec2_norm(IVEC2S2V((r))))
+
+#define RADIAL3I(c, r, v)\
+    (glms_vec3_norm(glms_vec3_sub(IVEC3S2V((c)), IVEC3S2V((v)))) / glms_vec3_norm(IVEC3S2V((r))))
 
 #define WATER_LEVEL 64
 
@@ -14,6 +20,9 @@ enum Biome {
     PLAINS,
     BEACH
 };
+
+typedef void (*FSet)(struct Chunk*, s32, s32, s32, u32);
+typedef u32 (*FGet)(struct Chunk*, s32, s32, s32);
 
 typedef f32 (*FNoise)(void *p, f32 s, f32 x, f32 z);
 
@@ -61,12 +70,172 @@ struct Noise combined(struct Noise *n, struct Noise *m) {
     return result;
 }
 
+static u32 _get(struct Chunk *chunk, s32 x, s32 y, s32 z) {
+    ivec3s p = (ivec3s) {{ x, y, z }};
+    if (chunk_in_bounds(p)) {
+        return chunk_get_data(chunk, p);
+    } else {
+        return world_get_data(chunk->world, glms_ivec3_add(chunk->position, p));
+        return 0;
+    }
+}
+
+static void _set(struct Chunk *chunk, s32 x, s32 y, s32 z, u32 d) {
+    ivec3s p = (ivec3s) {{ x, y, z }};
+    if (chunk_in_bounds(p)) {
+        chunk_set_data(chunk, p, d);
+    } else {
+        world_set_data(chunk->world, glms_ivec3_add(chunk->position, p), d);
+    }
+}
+
+void tree(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
+    s32 h = RAND(3, 5);
+
+    for (s32 yy = y; yy <= (y + h); yy++) {
+        set(chunk, x, yy, z, LOG);
+    }
+
+    s32 lh = RAND(2, 3);
+    
+    for (s32 xx = (x - 2); xx <= (x + 2); xx++) {
+        for (s32 zz = (z - 2); zz <= (z + 2); zz++) {
+            for (s32 yy = (y + h); yy <= (y + h + 1); yy++) {
+                s32 c = 0;
+                c += xx == (x - 2) || xx == (x + 2);
+                c += zz == (z - 2) || zz == (z + 2);
+                bool corner = c == 2;
+
+                if ((!(xx == x && zz == z) || yy > (y + h)) &&
+                    !(corner && yy == (y + h + 1) && RANDCHANCE(0.4))) {
+                    set(chunk, xx, yy, zz, LEAVES);
+                }
+            }
+        }
+    }
+
+    for (s32 xx = (x - 1); xx <= (x + 1); xx++) {
+        for (s32 zz = (z - 1); zz <= (z + 1); zz++) {
+            for (s32 yy = (y + h + 2); yy <= (y + h + lh); yy++) {
+                s32 c = 0;
+                c += xx == (x - 1) || xx == (x + 1);
+                c += zz == (z - 1) || zz == (z + 1);
+                bool corner = c == 2;
+
+                if (!(corner && yy == (y + h + lh) && RANDCHANCE(0.8))) {
+                    set(chunk, xx, yy, zz, LEAVES);
+                }
+            }
+        }
+    }
+}
+
+void flowers(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
+    enum BlockId flower = RANDCHANCE(0.6) ? ROSE : BUTTERCUP;
+
+    s32 l = RAND(1, 4);
+    s32 h = RAND(1, 4);
+
+    for (s32 xx = (x - l); xx <= (x + l); xx++) {
+        for (s32 zz = (z - h); zz <= (z + h); zz++) {
+            enum BlockId under = get(chunk, xx, y, zz);
+            if ((under == GRASS) &&
+                RANDCHANCE(0.5)) {
+                set(chunk, xx, y + 1, zz, flower);
+            }
+        }   
+    }
+}
+
+void orevein(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z, enum BlockId block) {
+    s32 h = RAND(1, y - 4);
+    
+    if (h < 0 || h > y - 4) {
+        return;
+    }
+
+    s32 s;
+    switch (block) {
+        case COAL:
+            s = 4;
+            break;
+        case COPPER:
+        default:
+            s = 1;
+            break;
+    }
+
+    s32 l = RAND(1, s);
+    s32 w = RAND(1, s);
+    s32 i = RAND(1, s);
+
+    for (s32 xx = (x - l); xx <= (x + l); xx++) {
+        for (s32 zz = (z - w); zz <= (z + w); zz++) {
+            for (s32 yy = (h - i); yy <= (h + i); yy++) {
+                f32 d = 1.0f - RADIAL3I(
+                    ((ivec3s) {{ x, h, z }}),
+                    ((ivec3s) {{ l, w, i }}),
+                    ((ivec3s) {{ xx, yy, zz }})
+                );
+
+                if (get(chunk, xx, yy, zz) == STONE && RANDCHANCE(0.2 + d * 0.7)) {
+                    set(chunk, xx, yy, zz, block);
+                }
+            }
+        }
+    }
+}
+
+void lavapool(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
+    s32 h = y - 1;
+
+    s32 s = RAND(1, 5);
+    s32 l = RAND(s - 1, s + 1);
+    s32 w = RAND(s - 1, s + 1);
+
+    for (s32 xx = (x - l); xx <= (x + l); xx++) {
+        for (s32 zz = (z - w); zz <= (z + w); zz++) {
+            f32 d = 1.0f - RADIAL2I(
+                ((ivec2s) {{ x, z }}),
+                ((ivec2s) {{ l + 1, w + 1 }}),
+                ((ivec2s) {{ xx, zz }})
+            );
+
+            // all border blocks must be solid (or lava) to place lava
+            bool allow = true;
+
+            for (s32 i = -1; i <= 1; i++) {
+                for (s32 j = -1; j <= 1; j++) {
+                    enum BlockId block = get(chunk, xx + i, h, zz + j);
+                    if (block != LAVA &&
+                            BLOCKS[block].is_transparent(chunk->world, (ivec3s) {{ xx + i, h, zz + i }})) {
+                        allow = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!allow) {
+                continue;
+            }
+
+            if (RANDCHANCE(0.2 + d * 0.95)) {
+                set(chunk, xx, h, zz, LAVA);
+            }
+        }
+    }
+}
+
 void worldgen_generate(struct Chunk *chunk) {
     // TODO: configure in world.c
     const u64 seed = 1;
+    SRAND(seed + ivec3shash(chunk->offset));
 
-    // Base noise
+    // biome noise
     struct Noise n = octave(6, 0);
+
+    // ore noise
+    struct Noise m = octave(6, 1);
 
     // Different offsets of octave noise functions
     struct Noise os[] = {
@@ -93,8 +262,9 @@ void worldgen_generate(struct Chunk *chunk) {
             int hl = (cs[0].compute(&cs[0].params, seed, wx * base_scale, wz * base_scale) / 6.0f) - 4.0f;
             int hh = (cs[1].compute(&cs[1].params, seed, wx * base_scale, wz * base_scale) / 5.0f) + 6.0f;
 
-            // Sample the "biome" noise
+            // Sample the biome noise and extra noise
             f32 t = n.compute(&n.params, seed, wx, wz);
+            f32 r = m.compute(&m.params, seed, wx * 4.0f, wz * 4.0f) / 32.0f;
 
             if (t > 0) {
                 hr = hl;
@@ -103,12 +273,15 @@ void worldgen_generate(struct Chunk *chunk) {
             }
 
             // offset by water level and determine biome
-            int h = hr + WATER_LEVEL;
+            s32 h = hr + WATER_LEVEL;
 
             // beach is anything close-ish to water in biome AND height
             enum Biome biome = (h < WATER_LEVEL ?
                 OCEAN :
                 ((t < 0.08f && h < WATER_LEVEL + 2) ? BEACH : PLAINS));
+
+            // dirt or sand depth
+            s32 d = r * 1.4f + 5.0f;
 
             for (s32 y = 0; y < h; y++) {
                 enum BlockId block;
@@ -126,8 +299,7 @@ void worldgen_generate(struct Chunk *chunk) {
                             block = GRASS;
                             break;
                     }
-                } else if (y > (h - 4)) {
-                    // TODO: varying dirt layer height
+                } else if (y > (h - d)) {
                     block = biome == BEACH ? SAND : DIRT;
                 } else {
                     block = STONE;
@@ -141,8 +313,34 @@ void worldgen_generate(struct Chunk *chunk) {
                 chunk_set_data(chunk, (ivec3s) {{ x, y, z }}, WATER);
             }
 
-            // TODO: trees
-            // TODO: flowers
+            if (RANDCHANCE(0.004)) {
+                orevein(chunk, _get, _set, x, h, z, COAL);
+            }
+
+            if (RANDCHANCE(0.004)) {
+                orevein(chunk, _get, _set, x, h, z, COPPER);
+            }
+
+            if (biome != OCEAN && h <= (WATER_LEVEL + 3) && t < 0.1f && RANDCHANCE(0.005)) {
+                lavapool(chunk, _get, _set, x, h, z);
+            }
+
+            if (biome == PLAINS && RANDCHANCE(0.005)) {
+                tree(chunk, _get, _set, x, h, z);
+            }
+
+            if (biome == PLAINS && RANDCHANCE(0.0015)) {
+                flowers(chunk, _get, _set, x, h, z);
+            }
+        }
+    }
+
+    // set data in this chunk which was previously unloaded
+    for (size_t i = 0; i < chunk->world->unloaded_data.size; i++) {
+        struct WorldUnloadedData data = chunk->world->unloaded_data.list[i];
+        if (!ivec3scmp(chunk->offset, world_pos_to_offset(data.pos))) {
+            chunk_set_data(chunk, world_pos_to_chunk_pos(data.pos), data.data);
+            world_remove_unloaded_data(chunk->world, i);
         }
     }
 }

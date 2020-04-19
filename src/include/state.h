@@ -6,11 +6,12 @@
 #include "shader.h"
 #include "world.h"
 #include "window.h"
+#include "blockatlas.h"
 
 struct State {
     struct Window *window;
     struct Shader shader;
-    struct Atlas atlas;
+    struct BlockAtlas block_atlas;
     struct World world;
 
     bool wireframe;

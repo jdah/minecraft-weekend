@@ -8,9 +8,11 @@ uniform mat4 m, v, p;
 
 out vec4 v_color;
 out vec2 v_uv;
+out vec3 v_viewpos;
 
 void main() {
     gl_Position = p * v * m * vec4(position, 1.0);
     v_color = vec4(color, 1.0);
     v_uv = uv;
+    v_viewpos = ((v * m) * vec4(position, 1.0)).xyz;
 }

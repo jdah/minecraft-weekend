@@ -17,6 +17,8 @@
 #define IVEC3S2V(_v) ({ ivec3s _u = ( _v ); ((vec3s) {{ _u.x, _u.y, _u.z }}); })
 #define VEC3S2I(_v) ({ vec3s _u = ( _v ); ((ivec3s) {{ _u.x, _u.y, _u.z }}); })
 
+#define IVEC2S23(_v) ({ ivec2s _u = ( _v ); ((ivec3s) {{ _u.x, _u.y, 0 }}); })
+
 #define PI_2 GLM_PI_2
 #define PI GLM_PI
 #define TAU (2 * PI)
@@ -48,6 +50,7 @@
     max(_mn, min(_mx, _x)); })
 
 int ivec3scmp(ivec3s a, ivec3s b);
+s64 ivec3shash(ivec3s v);
 
 struct Ray {
     vec3s origin, direction;

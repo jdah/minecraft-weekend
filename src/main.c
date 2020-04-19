@@ -22,7 +22,7 @@ void init() {
             { .index = 1, .name = "uv" },
             { .index = 2, .name = "color" }
         });
-    state.atlas = atlas_create("res/images/blocks.png", (ivec2s) {{ 16, 16 }});
+    state.block_atlas = blockatlas_create("res/images/blocks.png");
     world_init(&state.world);
     state.wireframe = false;
     mouse_set_grabbed(true);
@@ -43,9 +43,11 @@ void init() {
 void destroy() {
     shader_destroy(state.shader);
     world_destroy(&state.world);
+    blockatlas_destroy(&state.block_atlas);
 }
 
 void tick() {
+    blockatlas_tick(&state.block_atlas);
     world_tick(&state.world);
 
     // Load chunks around the current camera position
@@ -55,10 +57,10 @@ void tick() {
         for (int x = 0; x < 32; x++)
             for (int y = 64; y < 80; y++) {
                 world_set_data(&state.world, (ivec3s) {{ x, y, 4}}, GLASS);
-                world_set_data(&state.world, (ivec3s) {{ x, y, 8}}, GLASS);
+                world_set_data(&state.world, (ivec3s) {{ x, y, 8}}, LAVA);
             }
 
-        world_set_data(&state.world, (ivec3s) {{ 40, 80, 4}}, GLASS);
+        world_set_data(&state.world, (ivec3s) {{ 40, 80, 4}}, ROSE);
     }
 
 }
