@@ -12,6 +12,10 @@ static bool is_animated() {
     return true;
 }
 
+static bool is_liquid() {
+    return true;
+}
+
 static void get_animation_frames(ivec2s out[BLOCK_ATLAS_FRAMES]) {
     out[0] = (ivec2s) {{ 0, 2 }};
     out[1] = (ivec2s) {{ 1, 2 }};
@@ -28,5 +32,6 @@ void water_init() {
     water.get_texture_location = get_texture_location;
     water.is_animated = is_animated;
     water.get_animation_frames = get_animation_frames;
+    water.is_liquid = is_liquid;
     BLOCKS[WATER] = water;
 }

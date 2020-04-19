@@ -12,6 +12,10 @@ static bool is_animated() {
     return true;
 }
 
+static bool is_liquid() {
+    return true;
+}
+
 static void get_animation_frames(ivec2s out[BLOCK_ATLAS_FRAMES]) {
     out[0] = (ivec2s) {{ 0, 4 }};
     out[1] = (ivec2s) {{ 1, 4 }};
@@ -27,5 +31,6 @@ void lava_init() {
     lava.get_texture_location = get_texture_location;
     lava.is_animated = is_animated;
     lava.get_animation_frames = get_animation_frames;
+    lava.is_liquid = is_liquid;
     BLOCKS[LAVA] = lava;
 }

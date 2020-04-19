@@ -3,6 +3,7 @@
 
 #include "util.h"
 #include "camera.h"
+#include "block.h"
 
 // Forward declaration
 struct World;
@@ -21,6 +22,8 @@ struct EntityPlayer {
 
     // true if offset or block position changed since the last update()
     bool offset_changed, block_pos_changed;
+
+    enum BlockId selected_block;
 };
 
 void player_init(struct EntityPlayer *self, struct World *world);

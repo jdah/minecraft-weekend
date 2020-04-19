@@ -37,6 +37,23 @@ void player_update(struct EntityPlayer *self) {
     } else {
         self->offset_changed = false;
     }
+
+    for (size_t i = 0; i < 10; i++) {
+        if (state.window->keyboard.keys[GLFW_KEY_0 + i].down) {
+            self->selected_block = ((enum BlockId[]) {
+                DIRT,
+                STONE,
+                PLANKS,
+                SAND,
+                GLASS,
+                WATER,
+                LOG,
+                LEAVES,
+                ROSE,
+                COAL
+            })[i];
+        }
+    }
 }
 
 bool raycast_block_fn(ivec3s v) {
@@ -44,7 +61,7 @@ bool raycast_block_fn(ivec3s v) {
 }
 
 void player_tick(struct EntityPlayer *self) {
-    const f32 speed = 0.24f;
+    const f32 speed = 0.22f;
     vec3s movement, direction, forward, right;
     movement = GLMS_VEC3_ZERO;
     direction = GLMS_VEC3_ZERO;
@@ -101,7 +118,7 @@ void player_tick(struct EntityPlayer *self) {
             world_set_data(
                 self->world,
                 glms_ivec3_add(self->look_block, DIR2IVEC3S(self->look_face)),
-                SAND);
+                self->selected_block);
         }
     }
 }

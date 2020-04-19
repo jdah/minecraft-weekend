@@ -18,7 +18,8 @@
 enum Biome {
     OCEAN,
     PLAINS,
-    BEACH
+    BEACH,
+    MOUNTAIN
 };
 
 typedef void (*FSet)(struct Chunk*, s32, s32, s32, u32);
@@ -90,6 +91,11 @@ static void _set(struct Chunk *chunk, s32 x, s32 y, s32 z, u32 d) {
 }
 
 void tree(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
+    enum BlockId under = get(chunk, x, y - 1, z);
+    if (under != GRASS && under != DIRT) {
+        return;
+    }
+
     s32 h = RAND(3, 5);
 
     for (s32 yy = y; yy <= (y + h); yy++) {
@@ -133,8 +139,9 @@ void tree(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
 void flowers(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
     enum BlockId flower = RANDCHANCE(0.6) ? ROSE : BUTTERCUP;
 
-    s32 l = RAND(1, 4);
-    s32 h = RAND(1, 4);
+    s32 s = RAND(2, 6);
+    s32 l = RAND(s - 1, s + 1);
+    s32 h = RAND(s - 1, s + 1);
 
     for (s32 xx = (x - l); xx <= (x + l); xx++) {
         for (s32 zz = (z - h); zz <= (z + h); zz++) {
@@ -157,24 +164,24 @@ void orevein(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z, enum 
     s32 s;
     switch (block) {
         case COAL:
-            s = 4;
+            s = RAND(2, 4);
             break;
         case COPPER:
         default:
-            s = 1;
+            s = RAND(1, 3);
             break;
     }
 
-    s32 l = RAND(1, s);
-    s32 w = RAND(1, s);
-    s32 i = RAND(1, s);
+    s32 l = RAND(s - 1, s + 1);
+    s32 w = RAND(s - 1, s + 1);
+    s32 i = RAND(s - 1, s + 1);
 
     for (s32 xx = (x - l); xx <= (x + l); xx++) {
         for (s32 zz = (z - w); zz <= (z + w); zz++) {
             for (s32 yy = (h - i); yy <= (h + i); yy++) {
                 f32 d = 1.0f - RADIAL3I(
                     ((ivec3s) {{ x, h, z }}),
-                    ((ivec3s) {{ l, w, i }}),
+                    ((ivec3s) {{ l + 1, w + 1, i + 1 }}),
                     ((ivec3s) {{ xx, yy, zz }})
                 );
 
@@ -228,7 +235,7 @@ void lavapool(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
 
 void worldgen_generate(struct Chunk *chunk) {
     // TODO: configure in world.c
-    const u64 seed = 1;
+    const u64 seed = 2;
     SRAND(seed + ivec3shash(chunk->offset));
 
     // biome noise
@@ -243,6 +250,8 @@ void worldgen_generate(struct Chunk *chunk) {
         octave(8, 2),
         octave(8, 3),
         octave(8, 4),
+        octave(8, 5),
+        octave(8, 6),
     };
 
     // Two separate combined noise functions, each combining two different
@@ -250,6 +259,7 @@ void worldgen_generate(struct Chunk *chunk) {
     struct Noise cs[] = {
         combined(&os[0], &os[1]),
         combined(&os[2], &os[3]),
+        combined(&os[4], &os[5]),
     };
 
     for (s32 x = 0; x < CHUNK_SIZE.x; x++) {
@@ -264,7 +274,7 @@ void worldgen_generate(struct Chunk *chunk) {
 
             // Sample the biome noise and extra noise
             f32 t = n.compute(&n.params, seed, wx, wz);
-            f32 r = m.compute(&m.params, seed, wx * 4.0f, wz * 4.0f) / 32.0f;
+            f32 r = m.compute(&m.params, seed, wx / 4.0f, wz / 4.0f) / 32.0f;
 
             if (t > 0) {
                 hr = hl;
@@ -276,31 +286,65 @@ void worldgen_generate(struct Chunk *chunk) {
             s32 h = hr + WATER_LEVEL;
 
             // beach is anything close-ish to water in biome AND height
-            enum Biome biome = (h < WATER_LEVEL ?
-                OCEAN :
-                ((t < 0.08f && h < WATER_LEVEL + 2) ? BEACH : PLAINS));
+            enum Biome biome;
+            if (h < WATER_LEVEL) {
+                biome = OCEAN;
+            } else if (t < 0.08f && h < WATER_LEVEL + 2) {
+                biome = BEACH;
+            } else if (false) {
+                biome = MOUNTAIN;
+            } else {
+                biome = PLAINS;
+            }
+
+            if (biome == MOUNTAIN) {
+                h += (r + (-t / 12.0f)) * 2 + 2;
+            }
 
             // dirt or sand depth
             s32 d = r * 1.4f + 5.0f;
 
+            enum BlockId top_block;
+            switch (biome) {
+                case OCEAN:
+                    if (r > 0.8f) {
+                        top_block = GRAVEL;
+                    } else if (r > 0.3f) {
+                        top_block = SAND;
+                    } else if (r > 0.15f && t < 0.08f) {
+                        top_block = CLAY;
+                    } else {
+                        top_block = DIRT;
+                    }
+                    break;
+                case BEACH:
+                    top_block = SAND;
+                    break;
+                case PLAINS:
+                    top_block = (t > 4.0f && r > 0.78f) ? GRAVEL : GRASS;
+                    break;
+                case MOUNTAIN:
+                    if (r > 0.8f) {
+                        top_block = GRAVEL;
+                    } else if (r > 0.7f) {
+                        top_block = DIRT;
+                    } else {
+                        top_block = STONE;
+                    }
+                    break;
+            }
+
+
             for (s32 y = 0; y < h; y++) {
                 enum BlockId block;
                 if (y == (h - 1)) {
-                    // Determine top block according to biome
-                    switch (biome) {
-                        case OCEAN:
-                            // put sand floors in some places in the ocean
-                            block = (t > 0.03f ? DIRT : SAND);
-                            break;
-                        case BEACH:
-                            block = SAND;
-                            break;
-                        case PLAINS:
-                            block = GRASS;
-                            break;
-                    }
+                    block = top_block;
                 } else if (y > (h - d)) {
-                    block = biome == BEACH ? SAND : DIRT;
+                    if (top_block == GRASS) {
+                        block = DIRT;
+                    } else {
+                        block = top_block;
+                    }
                 } else {
                     block = STONE;
                 }
@@ -313,15 +357,15 @@ void worldgen_generate(struct Chunk *chunk) {
                 chunk_set_data(chunk, (ivec3s) {{ x, y, z }}, WATER);
             }
 
-            if (RANDCHANCE(0.004)) {
+            if (RANDCHANCE(0.02)) {
                 orevein(chunk, _get, _set, x, h, z, COAL);
             }
 
-            if (RANDCHANCE(0.004)) {
+            if (RANDCHANCE(0.02)) {
                 orevein(chunk, _get, _set, x, h, z, COPPER);
             }
 
-            if (biome != OCEAN && h <= (WATER_LEVEL + 3) && t < 0.1f && RANDCHANCE(0.005)) {
+            if (biome != OCEAN && h <= (WATER_LEVEL + 3) && t < 0.1f && RANDCHANCE(0.001)) {
                 lavapool(chunk, _get, _set, x, h, z);
             }
 
@@ -329,7 +373,7 @@ void worldgen_generate(struct Chunk *chunk) {
                 tree(chunk, _get, _set, x, h, z);
             }
 
-            if (biome == PLAINS && RANDCHANCE(0.0015)) {
+            if (biome == PLAINS && RANDCHANCE(0.0085)) {
                 flowers(chunk, _get, _set, x, h, z);
             }
         }

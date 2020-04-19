@@ -213,7 +213,7 @@ static void emit_sprite(
 
 static void emit_face(
     struct Mesh *mesh, vec3s position, enum Direction direction, 
-    vec2s uv_offset, vec2s uv_unit, bool transparent) {
+    vec2s uv_offset, vec2s uv_unit, bool transparent, bool shorten_y) {
     // add this face into the face buffer if it's transparent
     if (transparent) {
         struct Face face = {
@@ -231,7 +231,7 @@ static void emit_face(
     for (size_t i = 0; i < 4;  i++) {
         const f32 *vertex = &CUBE_VERTICES[CUBE_INDICES[(direction * 6) + UNIQUE_INDICES[i]] * 3];
         ((f32*) mesh->data.data)[mesh->data.index++] = position.x + vertex[0];
-        ((f32*) mesh->data.data)[mesh->data.index++] = position.y + vertex[1];
+        ((f32*) mesh->data.data)[mesh->data.index++] = position.y + ((shorten_y ? 0.9f : 1.0f) * vertex[1]);
         ((f32*) mesh->data.data)[mesh->data.index++] = position.z + vertex[2];
         ((f32*) mesh->data.data)[mesh->data.index++] = uv_offset.x + (uv_unit.x * CUBE_UVS[(i * 2) + 0]);
         ((f32*) mesh->data.data)[mesh->data.index++] = uv_offset.y + (uv_unit.y * CUBE_UVS[(i * 2) + 1]);
@@ -248,14 +248,14 @@ static void emit_face(
                     break;
                 case NORTH:
                 case SOUTH:
-                    color = 0.92f;
+                    color = 0.86f;
                     break;
                 case EAST:
                 case WEST:
-                    color = 0.86f;
+                    color = 0.8f;
                     break;
                 case DOWN:
-                    color = 0.78f;
+                    color = 0.6f;
                     break;
             }
         }
@@ -372,6 +372,18 @@ static void mesh(struct Chunk *self, enum MeshPass pass) {
                     atlas_offset(state.block_atlas.atlas, BLOCKS[data].get_texture_location(self->world, wpos, NORTH)),
                     state.block_atlas.atlas.sprite_unit);
             } else {
+                bool shorten_y = false;
+
+                if (block.is_liquid()) {
+                    ivec3s up = (ivec3s) {{ pos.x, pos.y + 1, pos.z }};
+
+                    if (chunk_in_bounds(up)) {
+                        shorten_y = !BLOCKS[self->data[chunk_pos_to_index(up)]].is_liquid();
+                    } else {
+                        shorten_y = !BLOCKS[world_get_data(self->world, glms_ivec3_add(up, self->position))].is_liquid();
+                    }
+                }
+
                 for (enum Direction d = 0; d < 6; d++) {
                     ivec3s dv = DIR2IVEC3S(d);
                     ivec3s neighbor = glms_ivec3_add(pos, dv), wneighbor = glms_ivec3_add(wpos, dv);
@@ -389,8 +401,8 @@ static void mesh(struct Chunk *self, enum MeshPass pass) {
 
                         emit_face(
                             transparent ? &self->meshes.transparent : &self->meshes.base, fpos, d,
-                            atlas_offset(state.block_atlas.atlas, BLOCKS[data].get_texture_location(self->world, wpos, d)),
-                            state.block_atlas.atlas.sprite_unit, transparent);
+                            atlas_offset(state.block_atlas.atlas, block.get_texture_location(self->world, wpos, d)),
+                            state.block_atlas.atlas.sprite_unit, transparent, shorten_y);
                     }
                 }
             }

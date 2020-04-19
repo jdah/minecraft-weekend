@@ -6,14 +6,24 @@
         (_cname = (_w)->chunks[i]) != (void *) INT64_MAX;\
         i++)
 
-// back-to-front ordering comparator
-static int _btf_cmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
+// back-to-front ordering pointer comparator
+static int _btf_pcmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
     return -(glms_ivec3_norm2(glms_ivec3_sub(*center, **a)) - glms_ivec3_norm2(glms_ivec3_sub(*center, **b)));
 }
 
-// front-to-back ordering comparator
-static int _ftb_cmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
+// front-to-back ordering pointer comparator
+static int _ftb_pcmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
     return glms_ivec3_norm2(glms_ivec3_sub(*center, **a)) - glms_ivec3_norm2(glms_ivec3_sub(*center, **b));
+}
+
+// back-to-front ordering comparator
+static int _btf_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
+    return -(glms_ivec3_norm2(glms_ivec3_sub(*center, *a)) - glms_ivec3_norm2(glms_ivec3_sub(*center, *b)));
+}
+
+// front-to-back ordering comparator
+static int _ftb_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
+    return -(glms_ivec3_norm2(glms_ivec3_sub(*center, *b)) - glms_ivec3_norm2(glms_ivec3_sub(*center, *a)));
 }
 
 // _cmp is comparison function for qsort_r
@@ -32,16 +42,38 @@ static int _ftb_cmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
         (_cname = (_w)->chunks[world_chunk_index(_w, *_v2[i])]) != (void *) INT64_MAX;\
         i++)
 
+#define _world_foreach_offset_cmp_impl(_w, _iname, _oname, _cmp, _v0, _v1, _v2)\
+    size_t _v0 = (_w->chunks_size * _w->chunks_size), _v1 = 0, _iname = 0;\
+    ivec3s _v2[_v0];\
+    for (_v1 = 0; _v1 < _v0; _v1++)\
+        { _v2[_v1] = world_chunk_offset(_w, _v1); }\
+    qsort_r(_v2, _v0, sizeof(ivec3s), &_w->center_offset, (int (*)(void*, const void*, const void*)) _cmp);\
+    ivec3s _oname;\
+    for (_v1 = 0; _v1 < _v0 &&\
+        ((_iname = world_chunk_index(_w, _v2[_v1])) != (size_t) - 1 &&\
+        (_oname.x = _v2[_v1].x) != INT32_MIN &&\
+        (_oname.y = _v2[_v1].y) != INT32_MIN &&\
+        (_oname.z = _v2[_v1].z) != INT32_MIN);\
+        _v1++)
+
 #define CONCAT_IMPL(x, y) x ## y
 #define CONCAT(x, y) CONCAT_IMPL(x, y)
 
 // iterate chunks from the borders in (back to front)
 #define world_foreach_btf(_w, _cname)\
-    _world_foreach_cmp_impl(_w, _cname, _btf_cmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
+    _world_foreach_cmp_impl(_w, _cname, _btf_pcmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
     
 // iterate chunks from the center out (front to back)
 #define world_foreach_ftb(_w, _cname)\
-    _world_foreach_cmp_impl(_w, _cname, _ftb_cmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
+    _world_foreach_cmp_impl(_w, _cname, _ftb_pcmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
+
+// iterate OFFSETS from the borders in (back to front)
+#define world_foreach_offset_btf(_w, _iname, _oname)\
+    _world_foreach_offset_cmp_impl(_w, _iname, _oname, _btf_cmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
+
+// iterate OFFSETS from the center out (front to back)
+#define world_foreach_offset_ftb(_w, _iname, _oname)\
+    _world_foreach_offset_cmp_impl(_w, _iname, _oname, _ftb_cmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
 
 // chunk offset -> world array index
 size_t world_chunk_index(struct World *self, ivec3s offset) {
@@ -187,9 +219,17 @@ u32 world_get_data(struct World *self, ivec3s pos) {
 }
 
 // Attempt to load any NULL chunks
-// TODO: load from center out
 static void load_empty_chunks(struct World *self) {
-    for (size_t i = 0; i < (self->chunks_size * self->chunks_size); i++) {
+    // TODO: load from center out
+    // world_foreach_offset_ftb(self, i, offset) {
+    //     if (self->chunks[i] == NULL &&
+    //         self->throttles.load.count < self->throttles.load.max) {
+    //         world_load_chunk(self, world_chunk_offset(self, i));
+    //         self->throttles.load.count++;
+    //     }
+    // }
+
+    for (size_t i = 0; i < self->chunks_size * self->chunks_size; i++) {
         if (self->chunks[i] == NULL &&
             self->throttles.load.count < self->throttles.load.max) {
             world_load_chunk(self, world_chunk_offset(self, i));

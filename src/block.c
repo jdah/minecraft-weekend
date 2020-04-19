@@ -22,6 +22,10 @@ static bool is_sprite() {
     return false;
 }
 
+static bool is_liquid() {
+    return false;
+}
+
 // Contains all default behavior for a block
 struct Block BLOCK_DEFAULT = {
     .id = -1,
@@ -29,7 +33,8 @@ struct Block BLOCK_DEFAULT = {
     .get_texture_location = get_texture_location,
     .is_animated = is_animated,
     .get_animation_frames = get_animation_frames,
-    .is_sprite = is_sprite
+    .is_sprite = is_sprite,
+    .is_liquid = is_liquid
 };
 
 extern void air_init();
@@ -45,7 +50,10 @@ extern void rose_init();
 extern void buttercup_init();
 extern void coal_init();
 extern void copper_init();
-extern void lava_ini();
+extern void lava_init();
+extern void clay_init();
+extern void gravel_init();
+extern void planks_init();
 
 void block_init() {
     air_init();
@@ -62,4 +70,7 @@ void block_init() {
     coal_init();
     copper_init();
     lava_init();
+    clay_init();
+    gravel_init();
+    planks_init();
 }

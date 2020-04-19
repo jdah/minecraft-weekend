@@ -21,11 +21,14 @@ enum BlockId {
     BUTTERCUP = 10,
     COAL = 11,
     COPPER = 12,
-    LAVA = 13
+    LAVA = 13,
+    CLAY = 14,
+    GRAVEL = 15,
+    PLANKS = 16
 };
 
 // Always the highest valid block id
-#define BLOCK_ID_LAST LAVA
+#define BLOCK_ID_LAST PLANKS
 
 struct Block {
     enum BlockId id;
@@ -34,6 +37,7 @@ struct Block {
     bool (*is_animated)();
     void (*get_animation_frames)(ivec2s out[BLOCK_ATLAS_FRAMES]);
     bool (*is_sprite)();
+    bool (*is_liquid)();
 };
 
 #define MAX_BLOCK_ID INT16_MAX

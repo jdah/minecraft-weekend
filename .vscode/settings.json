@@ -37,7 +37,10 @@
         "valarray": "c",
         "__functional_base": "c",
         "memory": "c",
-        "thread": "c"
+        "thread": "c",
+        "istream": "c",
+        "locale": "c",
+        "tuple": "c"
     },
     "C_Cpp.dimInactiveRegions": false
 }
