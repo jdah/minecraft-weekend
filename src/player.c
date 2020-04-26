@@ -110,11 +110,11 @@ void player_tick(struct EntityPlayer *self) {
 
     // place/destroy blocks
     if (self->has_look_block) {
-        if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_LEFT].pressed) {
+        if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_LEFT].pressed_tick) {
             world_set_data(self->world, self->look_block, 0);
         }
 
-        if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_RIGHT].pressed) {
+        if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_RIGHT].pressed_tick) {
             world_set_data(
                 self->world,
                 glms_ivec3_add(self->look_block, DIR2IVEC3S(self->look_face)),

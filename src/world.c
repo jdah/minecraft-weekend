@@ -157,7 +157,7 @@ void world_init(struct World *self) {
     self->unloaded_data.list = malloc(self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
 
     player_init(&self->player, self);
-    self->chunks_size = 24;
+    self->chunks_size = 20;
     self->chunks = calloc(1, self->chunks_size * self->chunks_size * sizeof(struct Chunk *));
     world_set_center(self, GLMS_IVEC3_ZERO);
 }
