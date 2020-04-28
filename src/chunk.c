@@ -100,7 +100,7 @@ void mesh_depth_sort(struct Mesh *self, vec3s center) {
     }
 
     // sort faces
-    quicksort(
+    mergesort(
         self->faces.data, self->faces.count, sizeof(struct Face),
         (int (*)(const void*, const void*)) _depth_sort_cmp);
 

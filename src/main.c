@@ -52,17 +52,6 @@ void tick() {
 
     // Load chunks around the current camera position
     world_set_center(&state.world, world_pos_to_block(state.world.player.camera.position));
-
-    if (state.window->keyboard.keys[GLFW_KEY_C].pressed_tick) {
-        for (int x = 0; x < 32; x++)
-            for (int y = 64; y < 80; y++) {
-                world_set_data(&state.world, (ivec3s) {{ x, y, 4}}, GLASS);
-                world_set_data(&state.world, (ivec3s) {{ x, y, 8}}, LAVA);
-            }
-
-        world_set_data(&state.world, (ivec3s) {{ 40, 80, 4}}, ROSE);
-    }
-
 }
 
 void update() {

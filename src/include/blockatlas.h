@@ -5,8 +5,8 @@
 #include "gfx.h"
 #include "texture.h"
 
-#define BLOCK_ATLAS_FPS 5
-#define BLOCK_ATLAS_FRAMES 5
+#define BLOCK_ATLAS_FPS 6
+#define BLOCK_ATLAS_FRAMES 16
 
 struct BlockAtlas {
     struct Texture frames[BLOCK_ATLAS_FRAMES];

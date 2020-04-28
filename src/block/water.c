@@ -5,7 +5,7 @@ static bool is_transparent(struct World *world, ivec3s pos) {
 }
 
 static ivec2s get_texture_location(struct World *world, ivec3s pos, enum Direction d) {
-    return (ivec2s) {{ 0, 2 }};
+    return (ivec2s) {{ 0, 15 }};
 }
 
 static bool is_animated() {
@@ -17,11 +17,9 @@ static bool is_liquid() {
 }
 
 static void get_animation_frames(ivec2s out[BLOCK_ATLAS_FRAMES]) {
-    out[0] = (ivec2s) {{ 0, 2 }};
-    out[1] = (ivec2s) {{ 1, 2 }};
-    out[2] = (ivec2s) {{ 2, 2 }};
-    out[3] = (ivec2s) {{ 3, 2 }};
-    out[4] = (ivec2s) {{ 4, 2 }};
+    for (size_t i = 0; i < BLOCK_ATLAS_FRAMES; i++) {
+        out[i] = (ivec2s) {{ i, 15 }}; 
+    }
 }
 
 
