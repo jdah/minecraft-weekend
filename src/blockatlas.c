@@ -34,7 +34,7 @@ struct BlockAtlas blockatlas_create(char *path) {
         u8 *new_pixels = malloc(pixels_size);
         memcpy(new_pixels, pixels, pixels_size);
 
-        for (size_t n = 0; n < BLOCK_ID_LAST; n++) {
+        for (size_t n = 0; n <= BLOCK_ID_LAST; n++) {
             struct Block block = BLOCKS[n];
             if (block.id == 0 || !block.is_animated()) {
                 continue;

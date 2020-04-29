@@ -7,32 +7,27 @@
 #include "vao.h"
 #include "world.h"
 
-#define CHUNK_SIZE ((ivec3s) {{ 16, 256, 16 }})
-#define CHUNK_SIZE_F ((vec3s) {{ 16, 256, 16 }})
+#define CHUNK_SIZE_X 32
+#define CHUNK_SIZE_Y 32
+#define CHUNK_SIZE_Z 32
 
-#define CHUNK_VOLUME (CHUNK_SIZE.x * CHUNK_SIZE.y * CHUNK_SIZE.z)
+#define CHUNK_SIZE ((ivec3s) {{ CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z }})
+#define CHUNK_SIZE_F ((vec3s) {{ CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z }})
 
-struct Face {
-    size_t indices_base;
-    vec3s position;
-    f32 distance;
-};
+#define CHUNK_VOLUME (CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z)
 
-struct MeshBuffer {
-    void *data;
-    size_t index, count, capacity;
-};
+#define chunk_foreach(_pname)\
+    ivec3s _pname = GLMS_IVEC3_ZERO_INIT;\
+    for (s32 x = 0; x < CHUNK_SIZE.x; x++)\
+        for (s32 y = 0; y < CHUNK_SIZE.y; y++)\
+            for (s32 z = 0;\
+                z < CHUNK_SIZE.z &&\
+                ((_pname.x = x) != INT32_MAX) &&\
+                ((_pname.y = y) != INT32_MAX) &&\
+                ((_pname.z = z) != INT32_MAX);\
+                z++)
 
-struct Mesh {
-    struct Chunk *chunk;
-
-    struct MeshBuffer data, faces, indices;
-    size_t vertex_count;
-
-    // buffer objects
-    struct VAO vao;
-    struct VBO vbo, ibo;
-};
+#define chunk_pos_to_index(p) (p.x * CHUNK_SIZE.y * CHUNK_SIZE.z + p.y * CHUNK_SIZE.z + p.z)
 
 struct Chunk {
     struct World *world;
@@ -43,17 +38,24 @@ struct Chunk {
     // block data
     u32 *data;
 
-    // if true, this chunk will re-mesh next frame
-    bool dirty;
+    // number of blocks
+    size_t count;
 
-    // if true, this chunk will do a transparency depth sort next frame
-    bool depth_sort;
+    struct {
+        // if true, this chunk will re-mesh next frame
+        bool dirty: 1;
+
+        // if true, this chunk will do a transparency depth sort next frame
+        bool depth_sort: 1;
+
+        // if true, this chunk contains no blocks
+        bool empty: 1;
+    } flags;
     
     struct {
-        struct Mesh base, transparent;
+        struct ChunkMesh *base, *transparent;
     } meshes;
 };
-
 
 bool chunk_in_bounds(ivec3s pos);
 
@@ -62,8 +64,63 @@ void chunk_destroy(struct Chunk *self);
 void chunk_set_data(struct Chunk *self, ivec3s pos, u32 data);
 u32 chunk_get_data(struct Chunk *self, ivec3s pos);
 void chunk_render(struct Chunk *self);
-void chunk_render_transparent(struct Chunk *self);
 void chunk_update(struct Chunk *self);
 void chunk_tick(struct Chunk *self);
+
+// chunkmesh.c
+#define BUFFER_TYPE_LAST FACES
+enum BufferType {
+    DATA = 0, INDICES, FACES
+};
+
+struct ChunkMeshBuffer {
+    enum BufferType type;
+
+    // data store for this buffer, NULL if not currently allocated
+    void *data;
+
+    // capacity (in bytes) of *data
+    size_t capacity;
+    
+    // CURRENT index into *data, used when building mesh
+    size_t index;
+
+    // FINAL count of elements in *data
+    size_t count;
+};
+
+
+struct ChunkMesh {
+    struct Chunk *chunk;
+
+    struct {
+        // if true, this mesh will be depth sorted the next time it is rendered
+        bool depth_sort: 1;
+
+        // if true, this mesh will have its buffers kept in memory when rendered
+        bool persist: 1;
+    } flags;
+
+    // data buffers
+    struct ChunkMeshBuffer buffers[3];
+
+    // total number of vertices in this mesh
+    size_t vertex_count;
+
+    // buffer objects
+    struct VAO vao;
+    struct VBO vbo, ibo;
+};
+
+enum ChunkMeshPass {
+    FULL, TRANSPARENCY
+};
+
+struct ChunkMesh *chunkmesh_create(struct Chunk *chunk, bool depth_sort);
+void chunkmesh_destroy(struct ChunkMesh *self);
+void chunkmesh_render(struct ChunkMesh *self);
+void chunkmesh_set_persist(struct ChunkMesh *self, bool persist);
+void chunk_mesh(struct Chunk *self, enum ChunkMeshPass pass);
+void chunk_depth_sort(struct Chunk *self);
 
 #endif

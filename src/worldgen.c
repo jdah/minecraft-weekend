@@ -238,6 +238,10 @@ void worldgen_generate(struct Chunk *chunk) {
     const u64 seed = 2;
     SRAND(seed + ivec3shash(chunk->offset));
 
+
+    chunk_set_data(chunk, (ivec3s) {{ 2, 2, 2 }}, STONE);
+    return;
+
     // biome noise
     struct Noise n = octave(6, 0);
 

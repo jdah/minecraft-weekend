@@ -1,8 +1,11 @@
 #include "include/world.h"
 
+// the total number of chunks in _w->chunks
+#define NUM_CHUNKS(_w) ((_w)->chunks_size * (_w)->chunks_size * (_w)->chunks_size)
+
 #define world_foreach(_w, _cname)\
     struct Chunk *_cname;\
-    for (size_t i = 0; i < ((_w)->chunks_size * (_w)->chunks_size) &&\
+    for (size_t i = 0; i < NUM_CHUNKS(_w) &&\
         (_cname = (_w)->chunks[i]) != (void *) INT64_MAX;\
         i++)
 
@@ -33,8 +36,8 @@ static int _ftb_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
 // TODO: qsort_r is not portable
 #define _world_foreach_cmp_impl(_w, _cname, _cmp, _v0, _v1, _v2)\
     size_t _v0 = 0, _v1 = 0;\
-    ivec3s *_v2[_w->chunks_size * _w->chunks_size];\
-    for (_v1 = 0; _v1 < (_w->chunks_size * _w->chunks_size); _v1++)\
+    ivec3s *_v2[NUM_CHUNKS(_w)];\
+    for (_v1 = 0; _v1 < NUM_CHUNKS(_w); _v1++)\
         { if (_w->chunks[_v1] != NULL) _v2[_v0++] = &_w->chunks[_v1]->offset; }\
     qsort_r(_v2, _v0, sizeof(ivec3s*), &_w->center_offset, (int (*)(void*, const void*, const void*)) _cmp);\
     struct Chunk *_cname;\
@@ -43,7 +46,7 @@ static int _ftb_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
         i++)
 
 #define _world_foreach_offset_cmp_impl(_w, _iname, _oname, _cmp, _v0, _v1, _v2)\
-    size_t _v0 = (_w->chunks_size * _w->chunks_size), _v1 = 0, _iname = 0;\
+    size_t _v0 = NUM_CHUNKS(_w), _v1 = 0, _iname = 0;\
     ivec3s _v2[_v0];\
     for (_v1 = 0; _v1 < _v0; _v1++)\
         { _v2[_v1] = world_chunk_offset(_w, _v1); }\
@@ -78,14 +81,18 @@ static int _ftb_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
 // chunk offset -> world array index
 size_t world_chunk_index(struct World *self, ivec3s offset) {
     ivec3s p = glms_ivec3_sub(offset, self->chunks_origin);
-    return p.z * self->chunks_size + p.x;
+    return (p.x * self->chunks_size * self->chunks_size) + (p.y * self->chunks_size) + p.z;
 }
 
 // world array index -> chunk offset
 ivec3s world_chunk_offset(struct World *self, size_t i) {
     return glms_ivec3_add(
         self->chunks_origin,
-        (ivec3s) {{ i % self->chunks_size, 0, i / self->chunks_size }}
+        (ivec3s) {{
+            i / (self->chunks_size * self->chunks_size),
+            (i / self->chunks_size) % self->chunks_size,
+            i % self->chunks_size
+        }}
     );
 }
 
@@ -93,7 +100,7 @@ ivec3s world_chunk_offset(struct World *self, size_t i) {
 ivec3s world_pos_to_offset(ivec3s pos) {
     return (ivec3s) {{
         (s32) floorf(pos.x / CHUNK_SIZE_F.x),
-        0,
+        (s32) floorf(pos.y / CHUNK_SIZE_F.x),
         (s32) floorf(pos.z / CHUNK_SIZE_F.z)
     }};
 }
@@ -115,8 +122,8 @@ ivec3s world_pos_to_chunk_pos(ivec3s pos) {
 
 bool world_chunk_in_bounds(struct World *self, ivec3s offset) {
     ivec3s p = glms_ivec3_sub(offset, self->chunks_origin);
-    return p.x >= 0 && p.z >= 0 &&
-        p.x < (s32) self->chunks_size && p.z < (s32) self->chunks_size;
+    return p.x >= 0 && p.y >= 0 && p.z >= 0 &&
+        p.x < (s32) self->chunks_size && p.y < (s32) self->chunks_size && p.z < (s32) self->chunks_size;
 }
 
 struct Chunk *world_get_chunk(struct World *self, ivec3s offset) {
@@ -150,15 +157,15 @@ void world_load_chunk(struct World *self, ivec3s offset) {
 
 void world_init(struct World *self) {
     memset(self, 0, sizeof(struct World));
-    self->throttles.load.max = 2;
-    self->throttles.mesh.max = 2;
+    self->throttles.load.max = 8;
+    self->throttles.mesh.max = 8;
 
     self->unloaded_data.capacity = 64;
     self->unloaded_data.list = malloc(self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
 
     player_init(&self->player, self);
-    self->chunks_size = 20;
-    self->chunks = calloc(1, self->chunks_size * self->chunks_size * sizeof(struct Chunk *));
+    self->chunks_size = 12;
+    self->chunks = calloc(1, NUM_CHUNKS(self) * sizeof(struct Chunk *));
     world_set_center(self, GLMS_IVEC3_ZERO);
 }
 
@@ -220,16 +227,7 @@ u32 world_get_data(struct World *self, ivec3s pos) {
 
 // Attempt to load any NULL chunks
 static void load_empty_chunks(struct World *self) {
-    // TODO: load from center out
-    // world_foreach_offset_ftb(self, i, offset) {
-    //     if (self->chunks[i] == NULL &&
-    //         self->throttles.load.count < self->throttles.load.max) {
-    //         world_load_chunk(self, world_chunk_offset(self, i));
-    //         self->throttles.load.count++;
-    //     }
-    // }
-
-    for (size_t i = 0; i < self->chunks_size * self->chunks_size; i++) {
+    world_foreach_offset_ftb(self, i, offset) {
         if (self->chunks[i] == NULL &&
             self->throttles.load.count < self->throttles.load.max) {
             world_load_chunk(self, world_chunk_offset(self, i));
@@ -241,7 +239,11 @@ static void load_empty_chunks(struct World *self) {
 // Centers the world's loaded chunks around the specified block position
 void world_set_center(struct World *self, ivec3s center_pos) {
     ivec3s new_offset = world_pos_to_offset(center_pos);
-    ivec3s new_origin = glms_ivec3_sub(new_offset, (ivec3s) {{ (self->chunks_size / 2) - 1, 0, (self->chunks_size / 2) - 1 }});
+    ivec3s new_origin = glms_ivec3_sub(new_offset, (ivec3s) {{
+        (self->chunks_size / 2) - 1,
+        (self->chunks_size / 2) - 1,
+        (self->chunks_size / 2) - 1
+    }});
 
     if (!memcmp(&new_origin, &self->chunks_origin, sizeof(ivec3s))) {
         // Do nothing if the center chunk hasn't moved
@@ -252,17 +254,15 @@ void world_set_center(struct World *self, ivec3s center_pos) {
     self->center_offset = new_offset;
     self->chunks_origin = new_origin;
 
-    size_t n_chunks = self->chunks_size * self->chunks_size;
-
     // Backup current chunks
-    struct Chunk *old[n_chunks];
-    memcpy(old, self->chunks, n_chunks * sizeof(struct Chunk *));
+    struct Chunk *old[NUM_CHUNKS(self)];
+    memcpy(old, self->chunks, NUM_CHUNKS(self) * sizeof(struct Chunk *));
 
     // Set world to all unloaded chunks initially
-    memset(self->chunks, 0, n_chunks * sizeof(struct Chunk *));
+    memset(self->chunks, 0, NUM_CHUNKS(self) * sizeof(struct Chunk *));
 
     // Place old chunks in positions of new chunk array, destroy if they are out of bounds now
-    for (size_t i = 0; i < n_chunks; i++) {
+    for (size_t i = 0; i < NUM_CHUNKS(self); i++) {
         struct Chunk *c = old[i];
         if (c == NULL) {
             continue;
@@ -282,11 +282,6 @@ void world_render(struct World *self) {
     world_foreach_btf(self, c) {
         if (c != NULL) {
             chunk_render(c);
-
-            // TODO: this is a hack to get roses to work, they need to emit the proper indices
-            glDisable(GL_CULL_FACE);
-            chunk_render_transparent(c);
-            glEnable(GL_CULL_FACE);
         }
     }
 
