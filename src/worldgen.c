@@ -239,7 +239,28 @@ void worldgen_generate(struct Chunk *chunk) {
     SRAND(seed + ivec3shash(chunk->offset));
 
 
-    chunk_set_data(chunk, (ivec3s) {{ 2, 2, 2 }}, STONE);
+    for (s32 x = 0; x < CHUNK_SIZE.x; x++) {
+        for (s32 y = 0; y < CHUNK_SIZE.y; y++) {
+            for (s32 z = 0; z < CHUNK_SIZE.z; z++) {
+                ivec3s p = (ivec3s) {{ x, y, z}},
+                       w = glms_ivec3_add(p, chunk->position);
+
+                enum BlockId block;
+                if (w.y > 64) {
+                    continue;
+                } else if (w.y > 63) {
+                    block = GRASS;
+                } else if (w.y > 60) {
+                    block = DIRT;
+                } else {
+                    block = STONE;
+                }
+
+                chunk_set_data(chunk, p, block);
+            }
+        }
+    }
+
     return;
 
     // biome noise

@@ -157,7 +157,7 @@ void world_load_chunk(struct World *self, ivec3s offset) {
 
 void world_init(struct World *self) {
     memset(self, 0, sizeof(struct World));
-    self->throttles.load.max = 8;
+    self->throttles.load.max = 4;
     self->throttles.mesh.max = 8;
 
     self->unloaded_data.capacity = 64;
@@ -219,7 +219,7 @@ void world_set_data(struct World *self, ivec3s pos, u32 data) {
 
 u32 world_get_data(struct World *self, ivec3s pos) {
     ivec3s offset = world_pos_to_offset(pos);
-    if (pos.y >= 0 && pos.y < CHUNK_SIZE.y && world_contains_chunk(self, offset)) {
+    if (world_contains_chunk(self, offset)) {
         return chunk_get_data(world_get_chunk(self, offset), world_pos_to_chunk_pos(pos));
     }
     return 0;
