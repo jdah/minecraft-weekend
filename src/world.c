@@ -1,4 +1,5 @@
 #include "include/world.h"
+#include "include/state.h"
 
 // the total number of chunks in _w->chunks
 #define NUM_CHUNKS(_w) ((_w)->chunks_size * (_w)->chunks_size * (_w)->chunks_size)
@@ -148,23 +149,22 @@ bool world_contains(struct World *self, ivec3s pos) {
 
 void world_load_chunk(struct World *self, ivec3s offset) {
     assert(!world_contains_chunk(self, offset));
-
     struct Chunk *chunk = malloc(sizeof(struct Chunk));
     chunk_init(chunk, self, offset);
     worldgen_generate(chunk);
-    self->chunks[world_chunk_index(self, offset)] = chunk;
+    self->chunks[world_chunk_index(self, chunk->offset)] = chunk;
 }
 
 void world_init(struct World *self) {
     memset(self, 0, sizeof(struct World));
-    self->throttles.load.max = 4;
+    self->throttles.load.max = 1;
     self->throttles.mesh.max = 8;
 
     self->unloaded_data.capacity = 64;
     self->unloaded_data.list = malloc(self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
 
     player_init(&self->player, self);
-    self->chunks_size = 12;
+    self->chunks_size = 8;
     self->chunks = calloc(1, NUM_CHUNKS(self) * sizeof(struct Chunk *));
     world_set_center(self, GLMS_IVEC3_ZERO);
 }
@@ -229,9 +229,9 @@ u32 world_get_data(struct World *self, ivec3s pos) {
 static void load_empty_chunks(struct World *self) {
     world_foreach_offset_ftb(self, i, offset) {
         if (self->chunks[i] == NULL &&
-            self->throttles.load.count < self->throttles.load.max) {
+            self->throttles.mesh.count < self->throttles.mesh.max) {
             world_load_chunk(self, world_chunk_offset(self, i));
-            self->throttles.load.count++;
+            self->throttles.mesh.count++;
         }
     }
 }
@@ -277,19 +277,44 @@ void world_set_center(struct World *self, ivec3s center_pos) {
     load_empty_chunks(self);
 }
 
-
 void world_render(struct World *self) {
-    world_foreach_btf(self, c) {
-        if (c != NULL) {
-            chunk_render(c);
+    // prepare (mesh) chunks from nearest to farthest
+    world_foreach_ftb(self, c0) {
+        if (c0 != NULL) {
+            chunk_prepare(c0);
+        } 
+    }
+
+    renderer_use_shader(&state.renderer, SHADER_CHUNK);
+    renderer_push_camera(&state.renderer);
+    renderer_set_camera(&state.renderer, CAMERA_PERSPECTIVE);
+    renderer_set_view_proj(&state.renderer);
+    shader_uniform_texture2D(state.renderer.shaders[SHADER_CHUNK], "tex", state.renderer.block_atlas.atlas.texture, 0);
+
+    shader_uniform_vec4(state.renderer.shaders[SHADER_CHUNK], "fog_color", state.renderer.clear_color);
+    shader_uniform_float(state.renderer.shaders[SHADER_CHUNK], "fog_near", (self->chunks_size / 2) * 32 - 12);
+    shader_uniform_float(state.renderer.shaders[SHADER_CHUNK], "fog_far", (self->chunks_size / 2) * 32 - 4);
+
+    // render solid geometry in no particular order
+    world_foreach(self, c1) {
+        if (c1 != NULL) {
+            chunk_render(c1, BASE);
+        }
+    }
+
+    // render transparent geometry back to front
+    world_foreach_btf(self, c2) {
+        if (c2 != NULL) {
+            chunk_render(c2, TRANSPARENT);
         }
     }
 
     player_render(&self->player);
+    renderer_pop_camera(&state.renderer);
 }
 
 void world_update(struct World *self) {
-    // Reset per-frame throttles
+    // reset throttles
     self->throttles.load.count = 0;
     self->throttles.mesh.count = 0;
 

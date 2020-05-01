@@ -7,14 +7,12 @@ void chunk_init(struct Chunk *self, struct World *world, ivec3s offset) {
     self->offset = offset;
     self->position = glms_ivec3_mul(offset, CHUNK_SIZE);
     self->data = calloc(1, CHUNK_VOLUME * sizeof(u32));
-    self->meshes.base = chunkmesh_create(self, false);
-    self->meshes.transparent = chunkmesh_create(self, true);
+    self->mesh = chunkmesh_create(self);
 }
 
 void chunk_destroy(struct Chunk *self) {
     free(self->data);
-    chunkmesh_destroy(self->meshes.base);
-    chunkmesh_destroy(self->meshes.transparent);
+    chunkmesh_destroy(self->mesh);
 }
 
 // returns true if pos is within chunk boundaries
@@ -64,7 +62,7 @@ void chunk_set_data(struct Chunk *self, ivec3s pos, u32 data) {
     const size_t index = chunk_pos_to_index(pos);
     u32 prev_data = self->data[index];
     self->data[index] = data;
-    self->flags.dirty |= data != prev_data;
+    self->mesh->flags.dirty |= data != prev_data;
 
     if (data != prev_data) {
         self->count += data == AIR ? -1 : 1;
@@ -79,7 +77,7 @@ void chunk_set_data(struct Chunk *self, ivec3s pos, u32 data) {
 
         for (size_t i = 0; i < 6; i++) {
             if (neighbors[i] != NULL) {
-                neighbors[i]->flags.dirty = true;
+                neighbors[i]->mesh->flags.dirty = true;
             }
         }
     }
@@ -90,41 +88,35 @@ u32 chunk_get_data(struct Chunk *self, ivec3s pos) {
     return self->data[chunk_pos_to_index(pos)];
 }
 
-void chunk_render(struct Chunk *self) {
+void chunk_prepare(struct Chunk *self) {
     if (self->flags.empty) {
         return;
     }
 
-    if (self->world->throttles.mesh.count < self->world->throttles.mesh.max) {
-        if (self->flags.dirty) {
-            chunk_mesh(self, FULL);
-            self->flags.dirty = false;
-            self->flags.depth_sort = false;
-            self->world->throttles.mesh.count++;
-        } else if (self->flags.depth_sort) {
-            chunk_depth_sort(self);
-            self->flags.depth_sort = false;
-            self->world->throttles.mesh.count++;
-        }
+    chunkmesh_prepare_render(self->mesh);
+}
+
+void chunk_render(struct Chunk *self, enum ChunkMeshPart part) {
+    if (self->flags.empty) {
+        return;
     }
 
-    chunkmesh_render(self->meshes.base);
-    chunkmesh_render(self->meshes.transparent);
+    chunkmesh_render(self->mesh, part);
 }
 
 void chunk_update(struct Chunk *self) {
     // Depth sort the transparent mesh if
     // (1) the player is inside of this chunk and their block position changed
-    // (2) the player has moved chunks AND this chunk is close (within 1 chunk distance)
+    // (2) the player has moved chunks AND this chunk is close
     struct EntityPlayer *player = &self->world->player;
     bool within_distance = glms_ivec3_norm(glms_ivec3_sub(self->offset, player->offset)) < 4;
 
-    self->flags.depth_sort =
+    self->mesh->flags.depth_sort =
         (!ivec3scmp(self->offset, player->offset) && player->block_pos_changed) ||
         (player->offset_changed && within_distance);
 
     // Persist depth sort data if the player is within depth sort distance of this chunk
-    chunkmesh_set_persist(self->meshes.transparent, within_distance);
+    chunkmesh_set_persist(self->mesh, within_distance);
 }
 
 void chunk_tick(struct Chunk *self) {

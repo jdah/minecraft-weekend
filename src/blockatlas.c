@@ -1,5 +1,6 @@
 #include "include/blockatlas.h"
 #include "include/block.h"
+#include "include/state.h"
 
 static void copy_pixels(u8 *pixels, ivec2s image_size, ivec2s size, ivec2s from, ivec2s to) {
     for (s32 j = 0; j < size.y; j++) {
@@ -10,25 +11,25 @@ static void copy_pixels(u8 *pixels, ivec2s image_size, ivec2s size, ivec2s from,
     }
 }
 
-#define ATLAS_SIZE ((ivec2s) {{ 256, 256 }})
-#define ATLAS_SIZE_SPRITES ((ivec2s) {{ 16, 16 }})
-#define ATLAS_SPRITE_SIZE ((ivec2s) {{ 16, 16 }})
-
-static void copy_offset(u8 *pixels, ivec2s from, ivec2s to) {
+static void copy_offset(struct BlockAtlas *atlas, u8 *pixels, ivec2s from, ivec2s to) {
     copy_pixels(
-        pixels, ATLAS_SIZE, ATLAS_SPRITE_SIZE,
-        glms_ivec2_mul(ATLAS_SPRITE_SIZE, (ivec2s) {{ from.x, ATLAS_SIZE_SPRITES.y - from.y - 1 }}),
-        glms_ivec2_mul(ATLAS_SPRITE_SIZE, (ivec2s) {{ to.x, ATLAS_SIZE_SPRITES.y - to.y - 1 }}));
+        pixels, atlas->size, atlas->sprite_size,
+        glms_ivec2_mul(atlas->sprite_size, (ivec2s) {{ from.x, atlas->size_sprites.y - from.y - 1 }}),
+        glms_ivec2_mul(atlas->sprite_size, (ivec2s) {{ to.x, atlas->size_sprites.y - to.y - 1 }}));
 }
 
-struct BlockAtlas blockatlas_create(char *path) {
+struct BlockAtlas blockatlas_create(char *path, ivec2s sprite_size) {
     struct BlockAtlas self;
     self.ticks = 0;
+    self.sprite_size = sprite_size;
 
     u8 *pixels;
     size_t width, height;
     texture_load_pixels(path,  &pixels, &width, &height);
     const size_t pixels_size = width * height * 4;
+
+    self.size = (ivec2s) {{ width, height }};
+    self.size_sprites = glms_ivec2_div(self.size, self.sprite_size);
 
     for (size_t i = 0; i < BLOCK_ATLAS_FRAMES; i++) {
         u8 *new_pixels = malloc(pixels_size);
@@ -42,14 +43,14 @@ struct BlockAtlas blockatlas_create(char *path) {
 
             ivec2s frames[BLOCK_ATLAS_FRAMES];
             block.get_animation_frames(frames);
-            copy_offset(new_pixels, frames[i], frames[0]);
+            copy_offset(&self, new_pixels, frames[i], frames[0]);
         }
 
         self.frames[i] = texture_create_from_pixels(new_pixels, width, height);
         free(new_pixels);
     }
 
-    self.atlas = atlas_create_from_texture(self.frames[0], ATLAS_SPRITE_SIZE);
+    self.atlas = atlas_create_from_texture(self.frames[0], self.sprite_size);
 
     free(pixels);
     return self;
@@ -61,8 +62,7 @@ void blockatlas_destroy(struct BlockAtlas *self) {
     }
 }
 
-void blockatlas_tick(struct BlockAtlas *self) {
-    size_t frame = (self->ticks % 60) / (60 / BLOCK_ATLAS_FRAMES);
+void blockatlas_update(struct BlockAtlas *self) {
+    size_t frame = (state.ticks / (TICKRATE / BLOCK_ATLAS_FPS)) % BLOCK_ATLAS_FRAMES;
     self->atlas.texture = self->frames[frame];
-    self->ticks++;
 }

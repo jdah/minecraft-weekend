@@ -4,7 +4,7 @@
 void player_init(struct EntityPlayer *self, struct World *world) {
     memset(self, 0, sizeof(struct EntityPlayer));
     self->world = world;
-    self->camera = camera_create(radians(75.0f));
+    perspective_camera_init(&self->camera, radians(75.0f));
 }
 
 void player_destroy(struct EntityPlayer *self) {
@@ -12,12 +12,12 @@ void player_destroy(struct EntityPlayer *self) {
 }
 
 void player_render(struct EntityPlayer *self) {
-
+    state.renderer.perspective_camera = self->camera;
 }
 
 void player_update(struct EntityPlayer *self) {
     const f32 mouse_sensitivity = 3.2f;
-    camera_update(&self->camera);
+    perspective_camera_update(&self->camera);
     self->camera.pitch -= state.window->mouse.delta.y / (((f32) state.window->frame_delta) / (mouse_sensitivity * 10000.0f));
     self->camera.yaw -= state.window->mouse.delta.x / (((f32) state.window->frame_delta) / (mouse_sensitivity * 10000.0f));
 
@@ -61,7 +61,7 @@ bool raycast_block_fn(ivec3s v) {
 }
 
 void player_tick(struct EntityPlayer *self) {
-    const f32 speed = 0.22f;
+    const f32 speed = 1 * 0.22f;
     vec3s movement, direction, forward, right;
     movement = GLMS_VEC3_ZERO;
     direction = GLMS_VEC3_ZERO;

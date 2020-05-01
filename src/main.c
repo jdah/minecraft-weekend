@@ -13,61 +13,38 @@ struct State state;
 
 void init() {
     block_init();
-
     state.window = &window;
-    state.shader = shader_create(
-        "res/shaders/basic.vs", "res/shaders/basic.fs",
-        1, (struct VertexAttr[]) {
-            { .index = 0, .name = "position" },
-            { .index = 1, .name = "uv" },
-            { .index = 2, .name = "color" }
-        });
-    state.block_atlas = blockatlas_create("res/images/blocks.png");
+    renderer_init(&state.renderer);
     world_init(&state.world);
-    state.wireframe = false;
     mouse_set_grabbed(true);
-
-    // OpenGL configuration
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     state.world.player.camera.position = (vec3s) {{ 0, 80, 0 }};
 }
 
 void destroy() {
-    shader_destroy(state.shader);
+    renderer_destroy(&state.renderer);
     world_destroy(&state.world);
-    blockatlas_destroy(&state.block_atlas);
 }
 
 void tick() {
-    blockatlas_tick(&state.block_atlas);
     world_tick(&state.world);
-
-    // Load chunks around the current camera position
     world_set_center(&state.world, world_pos_to_block(state.world.player.camera.position));
+    state.ticks++;
 }
 
 void update() {
+    renderer_update(&state.renderer);
     world_update(&state.world);
 
     // wireframe toggle (T)
     if (state.window->keyboard.keys[GLFW_KEY_T].pressed) {
-        state.wireframe = !state.wireframe;
+        state.renderer.flags.wireframe = !state.renderer.flags.wireframe;
     }
 }
 
 void render() {
-    glClearColor(0.5f, 0.8f, 0.9f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glPolygonMode(GL_FRONT_AND_BACK, state.wireframe ? GL_LINE : GL_FILL);
+    state.renderer.clear_color = (vec4s) {{ 0.5f, 0.8f, 0.9f, 1.0f }};
+    renderer_prepare(&state.renderer, PASS_3D);
     world_render(&state.world);
 }
 

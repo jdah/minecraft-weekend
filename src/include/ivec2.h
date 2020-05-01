@@ -255,4 +255,27 @@ glm_ivec2_divs(ivec2 v, int s, ivec2 dest) {
   dest[1] = v[1] / s;
 }
 
+CGLM_INLINE
+void
+glm_ivec2_print(ivec2            vec,
+                FILE * __restrict ostream) {
+  int i;
+
+#define m 2
+
+  fprintf(ostream, "Vector (int%d):\n\t|", m);
+
+  for (i = 0; i < m; i++) {
+    fprintf(ostream, "%d", vec[i]);
+
+    if (i != m - 1)
+      fprintf(ostream, "\t");
+  }
+
+  fprintf(ostream, "|\n\n");
+  
+#undef m
+}
+
+
 #endif /* cglm_ivec2_h */

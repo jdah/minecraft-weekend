@@ -42,19 +42,15 @@ struct Chunk {
     size_t count;
 
     struct {
-        // if true, this chunk will re-mesh next frame
-        bool dirty: 1;
-
-        // if true, this chunk will do a transparency depth sort next frame
-        bool depth_sort: 1;
-
         // if true, this chunk contains no blocks
         bool empty: 1;
     } flags;
     
-    struct {
-        struct ChunkMesh *base, *transparent;
-    } meshes;
+    struct ChunkMesh *mesh;
+};
+
+enum ChunkMeshPart {
+    BASE, TRANSPARENT
 };
 
 bool chunk_in_bounds(ivec3s pos);
@@ -63,7 +59,8 @@ void chunk_init(struct Chunk *self, struct World *world, ivec3s offset);
 void chunk_destroy(struct Chunk *self);
 void chunk_set_data(struct Chunk *self, ivec3s pos, u32 data);
 u32 chunk_get_data(struct Chunk *self, ivec3s pos);
-void chunk_render(struct Chunk *self);
+void chunk_prepare(struct Chunk *self);
+void chunk_render(struct Chunk *self, enum ChunkMeshPart part);
 void chunk_update(struct Chunk *self);
 void chunk_tick(struct Chunk *self);
 
@@ -89,38 +86,48 @@ struct ChunkMeshBuffer {
     size_t count;
 };
 
-
+// Chunk mesh instance, should only be accessed on the main thread
 struct ChunkMesh {
     struct Chunk *chunk;
 
-    struct {
-        // if true, this mesh will be depth sorted the next time it is rendered
-        bool depth_sort: 1;
-
-        // if true, this mesh will have its buffers kept in memory when rendered
-        bool persist: 1;
-    } flags;
-
-    // data buffers
-    struct ChunkMeshBuffer buffers[3];
+    // data, indices, faces buffers
+    struct ChunkMeshBuffer buffers[BUFFER_TYPE_LAST + 1];
 
     // total number of vertices in this mesh
     size_t vertex_count;
+
+    struct {
+        struct {
+            size_t offset, count;
+        } base, transparent;
+    } indices;
+
+    struct {
+        // if true, this mesh needs to be finalized (uploaded)
+        bool finalize: 1;
+
+        // if true, this mesh will be rebuilt next time it is rendered
+        bool dirty: 1;
+
+        // if true, this mesh will be depth sorted next time it is rendered
+        bool depth_sort: 1;
+
+        // if true, this mesh will be destroyed when its data is next accessible
+        bool destroy: 1;
+
+        // if true, index and face buffers are kept in memory after building
+        bool persist: 1;
+    } flags;
 
     // buffer objects
     struct VAO vao;
     struct VBO vbo, ibo;
 };
 
-enum ChunkMeshPass {
-    FULL, TRANSPARENCY
-};
-
-struct ChunkMesh *chunkmesh_create(struct Chunk *chunk, bool depth_sort);
+struct ChunkMesh *chunkmesh_create(struct Chunk *chunk);
 void chunkmesh_destroy(struct ChunkMesh *self);
-void chunkmesh_render(struct ChunkMesh *self);
+void chunkmesh_prepare_render(struct ChunkMesh *self);
+void chunkmesh_render(struct ChunkMesh *self, enum ChunkMeshPart part);
 void chunkmesh_set_persist(struct ChunkMesh *self, bool persist);
-void chunk_mesh(struct Chunk *self, enum ChunkMeshPass pass);
-void chunk_depth_sort(struct Chunk *self);
 
 #endif

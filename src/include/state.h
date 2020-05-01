@@ -3,18 +3,15 @@
 
 #include "gfx.h"
 #include "util.h"
-#include "shader.h"
 #include "world.h"
 #include "window.h"
-#include "blockatlas.h"
+#include "renderer.h"
 
 struct State {
     struct Window *window;
-    struct Shader shader;
-    struct BlockAtlas block_atlas;
+    struct Renderer renderer;
     struct World world;
-
-    bool wireframe;
+    size_t ticks;
 };
 
 // global state

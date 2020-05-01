@@ -32,11 +32,10 @@ struct World {
         size_t size, capacity;
     } unloaded_data;
 
-    // Per-frame throttles on certain world operations
     struct {
         struct {
-            size_t count, max;
-        } load, mesh;
+            u64 count, max;
+        } mesh, load;
     } throttles;
 };
 

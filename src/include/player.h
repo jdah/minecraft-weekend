@@ -10,7 +10,7 @@ struct World;
 
 struct EntityPlayer {
     struct World *world;
-    struct Camera camera;
+    struct PerspectiveCamera camera;
 
     bool has_look_block;
     ivec3s look_block;

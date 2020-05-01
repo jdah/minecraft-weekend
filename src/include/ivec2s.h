@@ -298,4 +298,11 @@ glms_ivec2_divs(ivec2s a, int s) {
   return r;
 }
 
+CGLM_INLINE
+void
+glms_ivec2_print(ivec2s            vec,
+                 FILE * __restrict ostream) {
+  glm_ivec2_print(vec.raw, ostream);
+}
+
 #endif

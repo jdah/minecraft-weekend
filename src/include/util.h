@@ -1,6 +1,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#define TICKRATE 60
+
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -25,5 +27,6 @@
 #include "time.h"
 #include "direction.h"
 #include "types.h"
+#include "bitmap.h"
 
 #endif
