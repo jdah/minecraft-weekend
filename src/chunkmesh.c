@@ -1,6 +1,12 @@
 #include "include/chunk.h"
 #include "include/state.h"
 
+// TODO:
+// Vertex layout
+// - 20 bits of lighting (sunlight + RGB + intensity)
+// - 15 bits of position (x, y, z)
+// - 8 bits of texture (flat index)
+
 static const u32 FACE_INDICES[] = {1, 0, 3, 1, 3, 2};
 static const u32 UNIQUE_INDICES[] = {1, 0, 5, 2};
 static const u32 CUBE_INDICES[] = {
@@ -182,9 +188,8 @@ static inline void emit_sprite(
         CBAPPEND(f32, data, uv_offset.y + (uv_unit.y * CUBE_UVS[((i % 4) * 2) + 1]));
 
         // color
-        for (size_t j = 0; j < 3; j++) {
-            CBAPPEND(f32, data, 1.0f);
-        } 
+        // TODO: fix this
+        CBAPPEND(f32, data, 0.0f);
     }
 
     // emit indices
@@ -197,7 +202,8 @@ static inline void emit_sprite(
 }
 
 static inline void emit_face(
-    struct ChunkMesh *self, vec3s position, enum Direction direction, 
+    struct ChunkMesh *self, u64 block_data, u64 neighbor_data,
+    vec3s position, enum Direction direction, 
     vec2s uv_offset, vec2s uv_unit, bool transparent, bool shorten_y) {
     struct ChunkMeshBuffer
         *data = &self->buffers[DATA],
@@ -228,33 +234,10 @@ static inline void emit_face(
         CBAPPEND(f32, data, uv_offset.x + (uv_unit.x * CUBE_UVS[(i * 2) + 0]));
         CBAPPEND(f32, data, uv_offset.y + (uv_unit.y * CUBE_UVS[(i * 2) + 1]));
 
-        // TODO: real lighting
-        // vary color according to face direction
-        f32 color;
-        if (transparent) {
-            color = 1.0f;
-        } else {
-            switch (direction) {
-                case UP:
-                    color = 1.0f;
-                    break;
-                case NORTH:
-                case SOUTH:
-                    color = 0.86f;
-                    break;
-                case EAST:
-                case WEST:
-                    color = 0.8f;
-                    break;
-                case DOWN:
-                    color = 0.6f;
-                    break;
-            }
-        }
-
-        for (size_t j = 0; j < 3; j++) {
-            CBAPPEND(f32, data, color);
-        } 
+        // TODO: make buffers more robust, this is a hack
+        // use lighting data of this face's NEIGHBOR to light it
+        u32 light = chunk_data_to_all_light(neighbor_data);
+        CBAPPEND(f32, data, *((f32 *) (&light)));
     }
 
     // emit indices
@@ -364,18 +347,20 @@ static void chunkmesh_mesh(struct ChunkMesh *self) {
         vec3s fpos = IVEC3S2V(pos);
         ivec3s wpos = glms_ivec3_add(pos, chunk->position);
 
-        u32 data = chunk->data[chunk_pos_to_index(pos)];
-        if(data != 0) {
-            struct Block block = BLOCKS[data], neighbor_block;
+        u64 data = chunk->data[chunk_pos_to_index(pos)];
+        enum BlockId block_id = chunk_data_to_block(data);
+
+        if(block_id != AIR) {
+            struct Block block = BLOCKS[block_id];
             bool transparent = block.is_transparent(chunk->world, wpos);
             
             if (block.is_sprite()) {
-                emit_sprite(
-                    self, fpos,
-                    atlas_offset(
-                        state.renderer.block_atlas.atlas,
-                        BLOCKS[data].get_texture_location(chunk->world, wpos, NORTH)),
-                    state.renderer.block_atlas.atlas.sprite_unit);
+                // emit_sprite(
+                //     self, fpos,
+                //     atlas_offset(
+                //         state.renderer.block_atlas.atlas,
+                //         block.get_texture_location(chunk->world, wpos, NORTH)),
+                //     state.renderer.block_atlas.atlas.sprite_unit);
             } else {
                 bool shorten_y = false;
 
@@ -383,26 +368,25 @@ static void chunkmesh_mesh(struct ChunkMesh *self) {
                     ivec3s up = (ivec3s) {{ pos.x, pos.y + 1, pos.z }};
 
                     if (chunk_in_bounds(up)) {
-                        shorten_y = !BLOCKS[chunk->data[chunk_pos_to_index(up)]].is_liquid();
+                        shorten_y = !BLOCKS[chunk_get_block(chunk, up)].is_liquid();
                     } else {
-                        shorten_y = !BLOCKS[world_get_data(chunk->world, glms_ivec3_add(up, chunk->position))].is_liquid();
+                        shorten_y = !BLOCKS[world_get_block(chunk->world, glms_ivec3_add(up, chunk->position))].is_liquid();
                     }
                 }
 
                 for (enum Direction d = 0; d < 6; d++) {
                     ivec3s dv = DIR2IVEC3S(d);
                     ivec3s neighbor = glms_ivec3_add(pos, dv), wneighbor = glms_ivec3_add(wpos, dv);
-
-                    if (chunk_in_bounds(neighbor)) {
-                        neighbor_block = BLOCKS[chunk->data[chunk_pos_to_index(neighbor)]];
-                    } else {
-                        neighbor_block = BLOCKS[world_get_data(chunk->world, wneighbor)];
-                    }
+                    u64 neighbor_data =
+                        chunk_in_bounds(neighbor) ?
+                            chunk_get_data(chunk, neighbor) :
+                            world_get_data(chunk->world, wneighbor);
+                    struct Block neighbor_block = BLOCKS[chunk_data_to_block(neighbor_data)]; 
 
                     bool neighbor_transparent = neighbor_block.is_transparent(chunk->world, wneighbor);
                     if ((neighbor_transparent && !transparent) || (transparent && neighbor_block.id != block.id)) {
                         emit_face(
-                            self, fpos, d,
+                            self, data, neighbor_data, fpos, d,
                             atlas_offset(
                                 state.renderer.block_atlas.atlas,
                                 block.get_texture_location(chunk->world, wpos, d)),
@@ -454,10 +438,10 @@ void chunkmesh_render(struct ChunkMesh *self, enum ChunkMeshPart part) {
         state.renderer.shaders[SHADER_CHUNK], "m",
         glms_translate(glms_mat4_identity(), IVEC3S2V(self->chunk->position)));
 
-    const size_t vertex_size = 8 * sizeof(f32);
+    const size_t vertex_size = (5 * sizeof(f32)) + (1 * sizeof(u32));
     vao_attr(self->vao, self->vbo, 0, 3, GL_FLOAT, vertex_size, 0 * sizeof(f32));
     vao_attr(self->vao, self->vbo, 1, 2, GL_FLOAT, vertex_size, 3 * sizeof(f32));
-    vao_attr(self->vao, self->vbo, 2, 3, GL_FLOAT, vertex_size, 5 * sizeof(f32));
+    vao_attr(self->vao, self->vbo, 2, 1, GL_UNSIGNED_INT, vertex_size, 5 * sizeof(f32));
 
     vao_bind(self->vao);
     vbo_bind(self->ibo);

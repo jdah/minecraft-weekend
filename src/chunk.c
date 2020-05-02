@@ -1,12 +1,13 @@
 #include "include/chunk.h"
 #include "include/state.h"
+#include "include/world.h"
 
 void chunk_init(struct Chunk *self, struct World *world, ivec3s offset) {
     memset(self, 0, sizeof(struct Chunk));
     self->world = world;
     self->offset = offset;
     self->position = glms_ivec3_mul(offset, CHUNK_SIZE);
-    self->data = calloc(1, CHUNK_VOLUME * sizeof(u32));
+    self->data = calloc(1, CHUNK_VOLUME * sizeof(u64));
     self->mesh = chunkmesh_create(self);
 }
 
@@ -15,20 +16,8 @@ void chunk_destroy(struct Chunk *self) {
     chunkmesh_destroy(self->mesh);
 }
 
-// returns true if pos is within chunk boundaries
-bool chunk_in_bounds(ivec3s pos) {
-    return pos.x >= 0 && pos.y >= 0 && pos.z >= 0 &&
-        pos.x < CHUNK_SIZE.x && pos.y < CHUNK_SIZE.y && pos.z < CHUNK_SIZE.z;
-}
-
-// returns true if pos is on chunk boundaries (borders another chunk)
-bool chunk_on_bounds(ivec3s pos) {
-    return pos.x == 0 || pos.y == 0 || pos.z == 0 ||
-        pos.x == (CHUNK_SIZE.x - 1) || pos.y == (CHUNK_SIZE.y - 1) || pos.z == (CHUNK_SIZE.z - 1);
-}
-
 // returns the chunks that border the specified chunk position
-void chunk_get_bordering_chunks(struct Chunk *self, ivec3s pos, struct Chunk *dest[6]) {
+static void chunk_get_bordering_chunks(struct Chunk *self, ivec3s pos, struct Chunk *dest[6]) {
     size_t i = 0;
 
     if (pos.x == 0) {
@@ -56,22 +45,23 @@ void chunk_get_bordering_chunks(struct Chunk *self, ivec3s pos, struct Chunk *de
     }
 }
 
-void chunk_set_data(struct Chunk *self, ivec3s pos, u32 data) {
-    assert(chunk_in_bounds(pos));
+void chunk_on_modify(
+    struct Chunk *self, ivec3s pos,
+    u64 prev, u64 data) {
+    self->mesh->flags.dirty = true;
 
-    const size_t index = chunk_pos_to_index(pos);
-    u32 prev_data = self->data[index];
-    self->data[index] = data;
-    self->mesh->flags.dirty |= data != prev_data;
+    u64 prev_block = chunk_data_to_block(prev),
+        data_block = chunk_data_to_block(data);
 
-    if (data != prev_data) {
-        self->count += data == AIR ? -1 : 1;
+    if (data_block != prev_block) {
+        self->count += data_block == AIR ? -1 : 1;
     }
 
     self->flags.empty = self->count == 0;
 
     // mark any chunks that could have been affected as dirty
-    if (chunk_on_bounds(pos)) {
+    if (data_block != prev_block
+        && chunk_on_bounds(pos)) {
         struct Chunk *neighbors[6] = { NULL };
         chunk_get_bordering_chunks(self, pos, neighbors);
 
@@ -81,11 +71,6 @@ void chunk_set_data(struct Chunk *self, ivec3s pos, u32 data) {
             }
         }
     }
-}
-
-u32 chunk_get_data(struct Chunk *self, ivec3s pos) {
-    assert(chunk_in_bounds(pos));
-    return self->data[chunk_pos_to_index(pos)];
 }
 
 void chunk_prepare(struct Chunk *self) {

@@ -57,7 +57,7 @@ void player_update(struct EntityPlayer *self) {
 }
 
 bool raycast_block_fn(ivec3s v) {
-    return world_get_data(&state.world, v) != 0;
+    return world_get_block(&state.world, v) != 0;
 }
 
 void player_tick(struct EntityPlayer *self) {
@@ -111,11 +111,11 @@ void player_tick(struct EntityPlayer *self) {
     // place/destroy blocks
     if (self->has_look_block) {
         if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_LEFT].pressed_tick) {
-            world_set_data(self->world, self->look_block, 0);
+            world_set_block(self->world, self->look_block, 0);
         }
 
         if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_RIGHT].pressed_tick) {
-            world_set_data(
+            world_set_block(
                 self->world,
                 glms_ivec3_add(self->look_block, DIR2IVEC3S(self->look_face)),
                 self->selected_block);

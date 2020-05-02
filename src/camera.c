@@ -25,8 +25,6 @@ void perspective_camera_update(struct PerspectiveCamera *self) {
     self->right = glms_vec3_cross((vec3s) {{ 0.0f, 1.0f, 0.0f }}, self->direction);
     self->up = glms_vec3_cross(self->direction, self->right);
 
-    self->view_proj.view = glms_mat4_identity();
-    self->view_proj.proj = glms_mat4_identity();
     self->view_proj.view = glms_lookat(self->position, glms_vec3_add(self->position, self->direction), self->up);
     self->view_proj.proj = glms_perspective(self->fov, self->aspect, self->znear, self->zfar);
 }
@@ -40,7 +38,7 @@ void ortho_camera_init(struct OrthoCamera *self, vec2s min, vec2s max) {
 
 void ortho_camera_update(struct OrthoCamera *self) {
     self->view_proj.view = glms_mat4_identity();
-    self->view_proj.proj = glms_mat4_identity();
+    // self->view_proj.proj = glms_mat4_identity();
     self->view_proj.view = glms_translate(self->view_proj.view, (vec3s) {{ -self->position.x, -self->position.y, 0 }});
-    self->view_proj.proj = glms_ortho(self->min.x, self->max.x, self->min.y, self->max.y, -1.0f, 1.0f);
+    self->view_proj.proj = glms_ortho(self->min.x, self->max.x, self->min.y, self->max.y, -10.0f, 10.0f);
 }

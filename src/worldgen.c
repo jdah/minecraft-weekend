@@ -74,9 +74,9 @@ struct Noise combined(struct Noise *n, struct Noise *m) {
 static u32 _get(struct Chunk *chunk, s32 x, s32 y, s32 z) {
     ivec3s p = (ivec3s) {{ x, y, z }};
     if (chunk_in_bounds(p)) {
-        return chunk_get_data(chunk, p);
+        return chunk_get_block(chunk, p);
     } else {
-        return world_get_data(chunk->world, glms_ivec3_add(chunk->position, p));
+        return world_get_block(chunk->world, glms_ivec3_add(chunk->position, p));
         return 0;
     }
 }
@@ -84,9 +84,9 @@ static u32 _get(struct Chunk *chunk, s32 x, s32 y, s32 z) {
 static void _set(struct Chunk *chunk, s32 x, s32 y, s32 z, u32 d) {
     ivec3s p = (ivec3s) {{ x, y, z }};
     if (chunk_in_bounds(p)) {
-        chunk_set_data(chunk, p, d);
+        chunk_set_block(chunk, p, d);
     } else {
-        world_set_data(chunk->world, glms_ivec3_add(chunk->position, p), d);
+        world_set_block(chunk->world, glms_ivec3_add(chunk->position, p), d);
     }
 }
 
@@ -256,7 +256,7 @@ void worldgen_generate(struct Chunk *chunk) {
                     block = STONE;
                 }
 
-                chunk_set_data(chunk, p, block);
+                chunk_set_block(chunk, p, block);
             }
         }
     }
@@ -306,7 +306,7 @@ void worldgen_generate(struct Chunk *chunk) {
                     block = STONE;
                 }
 
-                chunk_set_data(chunk, p, block);
+                chunk_set_block(chunk, p, block);
             }
         }
     }
@@ -315,7 +315,7 @@ void worldgen_generate(struct Chunk *chunk) {
     // for (s32 i = 0; i < 10; i++) {
     //    for (s32 j = 0; j < 6; j++) {
     //        if (j % 3 != 0) {
-    //             chunk_set_data(chunk, (ivec3s) {{ 3 + i, j, 3 + j }}, GLASS);
+    //             chunk_set_block(chunk, (ivec3s) {{ 3 + i, j, 3 + j }}, GLASS);
     //        }
     //    }
     // }
@@ -432,12 +432,12 @@ void worldgen_generate(struct Chunk *chunk) {
     //                 block = STONE;
     //             }
 
-    //             chunk_set_data(chunk, (ivec3s) {{ x, y, z }}, block);
+    //             chunk_set_block(chunk, (ivec3s) {{ x, y, z }}, block);
     //         }
 
     //         // fill up to water level with water
     //         for (s32 y = h; y < WATER_LEVEL; y++) {
-    //             chunk_set_data(chunk, (ivec3s) {{ x, y, z }}, WATER);
+    //             chunk_set_block(chunk, (ivec3s) {{ x, y, z }}, WATER);
     //         }
 
     //         if (RANDCHANCE(0.02)) {
@@ -466,7 +466,7 @@ void worldgen_generate(struct Chunk *chunk) {
         // for (size_t i = 0; i < self->unloaded_data.size; i++) {
         //     struct WorldUnloadedData data = self->unloaded_data.list[i];
         //     if (!ivec3scmp(c->offset, world_pos_to_offset(data.pos))) {
-        //         chunk_set_data(c, world_pos_to_chunk_pos(data.pos), data.data);
+        //         chunk_set_block(c, world_pos_to_chunk_pos(data.pos), data.data);
         //         world_remove_unloaded_data(self, i);
         //     }
         // }

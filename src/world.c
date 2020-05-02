@@ -208,23 +208,6 @@ void world_remove_unloaded_data(struct World *self, size_t i) {
     }
 }
 
-void world_set_data(struct World *self, ivec3s pos, u32 data) {
-    ivec3s offset = world_pos_to_offset(pos);
-    if (world_contains_chunk(self, offset)) {
-        chunk_set_data(world_get_chunk(self, offset), world_pos_to_chunk_pos(pos), data);
-    } else {
-        world_append_unloaded_data(self, pos, data);
-    }
-}
-
-u32 world_get_data(struct World *self, ivec3s pos) {
-    ivec3s offset = world_pos_to_offset(pos);
-    if (world_contains_chunk(self, offset)) {
-        return chunk_get_data(world_get_chunk(self, offset), world_pos_to_chunk_pos(pos));
-    }
-    return 0;
-}
-
 // Attempt to load any NULL chunks
 static void load_empty_chunks(struct World *self) {
     world_foreach_offset_ftb(self, i, offset) {
