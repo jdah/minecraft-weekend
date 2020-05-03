@@ -14,11 +14,5 @@ uniform float fog_far;
 
 void main() {
     frag_color = texture(tex, v_uv) * v_color;
-
-    // disance fog
-    float fog = smoothstep(fog_near, fog_far, length(v_viewpos));
-    frag_color = mix(frag_color, fog_color, fog);
-
-    // gamma correction
-    frag_color = vec4(pow(frag_color.rgb, vec3(1.0 / 2.2)), frag_color.a);
+    frag_color.a = 1.0 - smoothstep(fog_near, fog_far, length(v_viewpos));
 }

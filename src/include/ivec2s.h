@@ -283,6 +283,22 @@ glms_ivec2_div(ivec2s a, ivec2s b) {
   return r;
 }
 
+
+/*!
+ * @brief mod vector with another component-wise modulo: d = a % b
+ *
+ * @param[in]  a    vector 1
+ * @param[in]  b    vector 2
+ * @returns         result = (a[0]%b[0], a[1]%b[1])
+ */
+CGLM_INLINE
+ivec2s
+glms_ivec2_mod(ivec2s a, ivec2s b) {
+  ivec2s r;
+  glm_ivec2_mod(a.raw, b.raw, r.raw);
+  return r;
+}
+
 /*!
  * @brief div vector with scalar: d = v / s
  *

@@ -6,6 +6,17 @@ layout (location = 2) in uint color;
 
 uniform mat4 m, v, p;
 
+// TODO: make this a uniform
+const vec3 sunlight_color = vec3(1.0, 1.0, 1.0);
+
+// should match enum Direction in direction.h
+const uint NORTH = 0;
+const uint SOUTH = 1;
+const uint EAST = 2;
+const uint WEST = 3;
+const uint UP = 4;
+const uint DOWN = 5;
+
 out vec4 v_color;
 out vec2 v_uv;
 out vec3 v_viewpos;
@@ -15,6 +26,7 @@ void main() {
     
     // TODO: sunlight
     // 'color' is packed:
+    // - (3) face direction, NORTH, SOUTH, EAST, WEST, UP, DOWN
     // - (4) sunlight intensity
     // - (4) R
     // - (4) G
@@ -26,12 +38,29 @@ void main() {
         ((color & 0x000F0U) >>  4U) / 16.0
     ) * ((color & 0x0000FU) / 16.0);
 
+    light += sunlight_color * (((color & 0xF0000U) >> 16U) / 16.0);
+
     // adjust light range to prevent entirely black lighting
     const float min_light = 0.005;
     light *= vec3(1.0 - min_light);
     light += vec3(min_light);
 
+    // adjust lighting for direction
+    uint direction = (color & 0x700000U) >> 20U;
+    if (direction == UP) {
+        light *= 1.0;
+    } else if (direction == EAST || direction == WEST) {
+        light *= 0.95;
+    } else if (direction == NORTH || direction == SOUTH) {
+        light *= 0.92;
+    } else {
+        light *= 0.89;
+    }
+
+    // set and gamma correct
     v_color = vec4(light, 1.0);
+    v_color = vec4(pow(v_color.rgb, vec3(1.0 / 2.2)), v_color.a);
+
     v_uv = uv;
     v_viewpos = ((v * m) * vec4(position, 1.0)).xyz;
 }

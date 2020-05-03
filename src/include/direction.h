@@ -11,11 +11,11 @@
 
 enum Direction {
     NORTH = 0,
-    SOUTH,
-    EAST,
-    WEST,
-    UP,
-    DOWN
+    SOUTH = 1,
+    EAST = 2,
+    WEST = 3,
+    UP = 4,
+    DOWN = 5
 };
 
 extern const ivec3s DIRECTION_IVEC[6];

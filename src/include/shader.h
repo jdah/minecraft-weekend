@@ -25,5 +25,7 @@ void shader_uniform_float(struct Shader self, char *name, f32 f);
 void shader_uniform_vec2(struct Shader self, char *name, vec2s v);
 void shader_uniform_vec3(struct Shader self, char *name, vec3s v);
 void shader_uniform_vec4(struct Shader self, char *name, vec4s v);
+void shader_uniform_int(struct Shader self, char *name, int v);
+void shader_uniform_uint(struct Shader self, char *name, unsigned int v);
 
 #endif

@@ -1,8 +1,12 @@
 #include "include/world.h"
 #include "include/state.h"
+#include "include/light.h"
 
 // the total number of chunks in _w->chunks
 #define NUM_CHUNKS(_w) ((_w)->chunks_size * (_w)->chunks_size * (_w)->chunks_size)
+
+// the total number of heightmaps in _w->heightmaps
+#define NUM_HEIGHTMAPS(_w) ((_w)->chunks_size * (_w)->chunks_size)
 
 #define world_foreach(_w, _cname)\
     struct Chunk *_cname;\
@@ -79,84 +83,109 @@ static int _ftb_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
 #define world_foreach_offset_ftb(_w, _iname, _oname)\
     _world_foreach_offset_cmp_impl(_w, _iname, _oname, _ftb_cmp, CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__), CONCAT(v, __COUNTER__))
 
-// chunk offset -> world array index
-size_t world_chunk_index(struct World *self, ivec3s offset) {
-    ivec3s p = glms_ivec3_sub(offset, self->chunks_origin);
-    return (p.x * self->chunks_size * self->chunks_size) + (p.y * self->chunks_size) + p.z;
+// world block position -> heightmap internal position
+static inline ivec2s world_pos_to_heightmap_pos(ivec2s pos) {
+    return glms_ivec2_mod(glms_ivec2_add(glms_ivec2_mod(pos, CHUNK_SIZE_XZ), CHUNK_SIZE_XZ), CHUNK_SIZE_XZ);
 }
 
-// world array index -> chunk offset
-ivec3s world_chunk_offset(struct World *self, size_t i) {
-    return glms_ivec3_add(
-        self->chunks_origin,
-        (ivec3s) {{
-            i / (self->chunks_size * self->chunks_size),
-            (i / self->chunks_size) % self->chunks_size,
-            i % self->chunks_size
-        }}
-    );
+static inline bool world_heightmap_in_bounds(struct World *self, ivec2s offset) {
+    ivec2s p = glms_ivec2_sub(offset, (ivec2s) {{ self->chunks_origin.x, self->chunks_origin.z }});
+    return p.x >= 0 && p.y >= 0 && p.x < (s32) self->chunks_size && p.y < (s32) self->chunks_size;
 }
 
-// block position -> chunk offset
-ivec3s world_pos_to_offset(ivec3s pos) {
-    return (ivec3s) {{
-        (s32) floorf(pos.x / CHUNK_SIZE_F.x),
-        (s32) floorf(pos.y / CHUNK_SIZE_F.x),
-        (s32) floorf(pos.z / CHUNK_SIZE_F.z)
+// heightmap offset -> array index
+static inline size_t world_heightmap_index(struct World *self, ivec2s offset) {
+    ivec2s p = glms_ivec2_sub(offset, (ivec2s) {{ self->chunks_origin.x, self->chunks_origin.z }});
+    return (p.x * self->chunks_size) + p.y;
+}
+
+// array index -> heightmap offset
+static inline ivec2s world_heightmap_offset(struct World *self, size_t i) {
+    return (ivec2s) {{
+        self->chunks_origin.x + (i / self->chunks_size),
+        self->chunks_origin.z + (i % self->chunks_size)
     }};
 }
 
-// float pos -> block pos
-ivec3s world_pos_to_block(vec3s pos) {
-    return (ivec3s) {{
-        (s32) floorf(pos.x),
-        (s32) floorf(pos.y),
-        (s32) floorf(pos.z)
-    }};
+// returns the heightmap for the specified chunk
+struct Heightmap *chunk_get_heightmap(struct Chunk *self) {
+    return self->world->heightmaps[
+        world_heightmap_index(
+            self->world,
+            (ivec2s) {{ self->offset.x, self->offset.z }})];
 }
 
-// world position -> chunk position
-ivec3s world_pos_to_chunk_pos(ivec3s pos) {
-    // ((pos % size) + size) % size
-    return glms_ivec3_mod(glms_ivec3_add(glms_ivec3_mod(pos, CHUNK_SIZE), CHUNK_SIZE), CHUNK_SIZE);
-}
+// returns heightmap value at specified x, z coordinate
+s64 world_heightmap_get(struct World *self, ivec2s p) {
+    ivec3s offset_c = world_pos_to_offset((ivec3s) {{ p.x, 0, p.y }});
+    ivec2s offset_h = (ivec2s) {{ offset_c.x, offset_c.z }};
 
-bool world_chunk_in_bounds(struct World *self, ivec3s offset) {
-    ivec3s p = glms_ivec3_sub(offset, self->chunks_origin);
-    return p.x >= 0 && p.y >= 0 && p.z >= 0 &&
-        p.x < (s32) self->chunks_size && p.y < (s32) self->chunks_size && p.z < (s32) self->chunks_size;
-}
-
-struct Chunk *world_get_chunk(struct World *self, ivec3s offset) {
-    if (!world_chunk_in_bounds(self, offset)) {
-        return NULL;
-    } else {
-        return self->chunks[world_chunk_index(self, offset)];
+    if (world_heightmap_in_bounds(self, offset_h)) {
+        return HEIGHTMAP_GET(
+            self->heightmaps[world_heightmap_index(self, offset_h)],
+            world_pos_to_heightmap_pos(p));
     }
+
+    return HEIGHTMAP_UNKNOWN;
 }
 
-bool world_contains_chunk(struct World *self, ivec3s offset) {
-    return world_get_chunk(self, offset) != NULL;
+// sets heightmap value at specified x, z coordinate
+void world_heightmap_set(struct World *self, ivec2s p, s64 y) {
+    ivec3s offset = world_pos_to_offset((ivec3s) {{ p.x, 0, p.y }});
+    HEIGHTMAP_SET(self->heightmaps[
+            world_heightmap_index(self, (ivec2s) {{ offset.x, offset.z }})],
+        world_pos_to_heightmap_pos(p), y);
 }
 
-bool world_in_bounds(struct World *self, ivec3s pos) {
-    return world_chunk_in_bounds(self, world_pos_to_offset(pos));
+// updates heightmap to be max(p.y, current heightmap value at (p.x, p.z))
+// returns true if heighmap value changed
+bool world_heightmap_update(struct World *self, ivec3s p) {
+    ivec3s offset = world_pos_to_offset(p);
+    struct Heightmap *h = self->heightmaps[
+           world_heightmap_index(self, (ivec2s) {{ offset.x, offset.z }})
+        ];
+    size_t i = HEIGHTMAP_INDEX(world_pos_to_heightmap_pos((ivec2s) {{ p.x, p.z }}));
+
+    if (p.y > h->data[i]) {
+        h->data[i] = p.y;
+        return true;
+    }
+
+    return false;
 }
 
-bool world_contains(struct World *self, ivec3s pos) {
-    return world_contains_chunk(self, world_pos_to_offset(pos));
+// recalculate the heightmap value at the specified x, z coordinate
+void world_heightmap_recalculate(struct World *self, ivec2s p) {
+    assert(world_in_bounds(self, (ivec3s) {{ p.x, 0, p.y }}));
+    s64 y_min = (self->chunks_origin.y - ((self->chunks_size / 2) * CHUNK_SIZE.y)),
+        y_max = (self->chunks_origin.y + ((self->chunks_size / 2) * CHUNK_SIZE.y));
+
+    for (s64 y = y_max; y >= y_min; y--) {
+        ivec3s w = (ivec3s) {{ p.x, y, p.y }};
+        if (!BLOCKS[world_get_block(self, w)].is_transparent(self, w)) {
+            world_heightmap_set(self, p, y);
+            return;
+        }
+    }
+
+    world_heightmap_set(self, p, HEIGHTMAP_UNKNOWN);
 }
 
 void world_load_chunk(struct World *self, ivec3s offset) {
     assert(!world_contains_chunk(self, offset));
     struct Chunk *chunk = malloc(sizeof(struct Chunk));
     chunk_init(chunk, self, offset);
+    chunk->flags.generating = true;
     worldgen_generate(chunk);
+    chunk->flags.generating = false;
     self->chunks[world_chunk_index(self, chunk->offset)] = chunk;
+    all_light_apply(chunk);
 }
 
 void world_init(struct World *self) {
     memset(self, 0, sizeof(struct World));
+    sky_init(&self->sky, self);
+
     self->throttles.load.max = 1;
     self->throttles.mesh.max = 8;
 
@@ -166,10 +195,13 @@ void world_init(struct World *self) {
     player_init(&self->player, self);
     self->chunks_size = 8;
     self->chunks = calloc(1, NUM_CHUNKS(self) * sizeof(struct Chunk *));
+    self->heightmaps = calloc(1, NUM_HEIGHTMAPS(self) * sizeof(struct Heightmap *));
+
     world_set_center(self, GLMS_IVEC3_ZERO);
 }
 
 void world_destroy(struct World *self) {
+    sky_destroy(&self->sky);
     player_destroy(&self->player);
 
     world_foreach(self, chunk) {
@@ -180,6 +212,7 @@ void world_destroy(struct World *self) {
     }
 
     free(self->chunks);
+    free(self->heightmaps);
 }
 
 void world_append_unloaded_data(struct World *self, ivec3s pos, u32 data) {
@@ -223,12 +256,12 @@ static void load_empty_chunks(struct World *self) {
 void world_set_center(struct World *self, ivec3s center_pos) {
     ivec3s new_offset = world_pos_to_offset(center_pos);
     ivec3s new_origin = glms_ivec3_sub(new_offset, (ivec3s) {{
-        (self->chunks_size / 2) - 1,
-        (self->chunks_size / 2) - 1,
-        (self->chunks_size / 2) - 1
+        (self->chunks_size / 2),
+        (self->chunks_size / 2),
+        (self->chunks_size / 2)
     }});
 
-    if (!memcmp(&new_origin, &self->chunks_origin, sizeof(ivec3s))) {
+    if (!ivec3scmp(new_origin, self->chunks_origin)) {
         // Do nothing if the center chunk hasn't moved
         return;
     }
@@ -257,10 +290,48 @@ void world_set_center(struct World *self, ivec3s center_pos) {
         }
     }
 
+    // Move heightmaps
+    struct Heightmap *old_heightmaps[NUM_HEIGHTMAPS(self)];
+    memcpy(old_heightmaps, self->heightmaps, NUM_HEIGHTMAPS(self) * sizeof(struct Heightmap *));
+    memset(self->heightmaps, 0, NUM_HEIGHTMAPS(self) * sizeof(struct Heightmap *));
+
+    for (size_t i = 0; i < NUM_HEIGHTMAPS(self); i++) {
+        struct Heightmap *h = old_heightmaps[i];
+        if (h == NULL) {
+            continue;
+        } else if (world_heightmap_in_bounds(self, h->offset)) {
+            self->heightmaps[world_heightmap_index(self, h->offset)] = h;
+        } else {
+            free(h->data);
+            free(h);
+        }
+    }
+
+    // Create empty heightmaps
+    for (size_t i = 0; i < NUM_HEIGHTMAPS(self); i++) {
+        if (self->heightmaps[i] == NULL) {
+            self->heightmaps[i] = malloc(sizeof(struct Heightmap));
+            self->heightmaps[i]->offset = world_heightmap_offset(self, i);
+            self->heightmaps[i]->data = malloc(CHUNK_SIZE.x * CHUNK_SIZE.z * sizeof(s64));
+            memsetl(self->heightmaps[i]->data, HEIGHTMAP_UNKNOWN, CHUNK_SIZE.x * CHUNK_SIZE.z * sizeof(s64));
+        }
+    }
+
+    if (self->heightmaps[0] == NULL) {
+        printf("what!\n");
+    }
+
     load_empty_chunks(self);
 }
 
 void world_render(struct World *self) {
+    // configure sky
+    self->sky.fog_near = (self->chunks_size / 2) * 32 - 12;
+    self->sky.fog_far = (self->chunks_size / 2) * 32 - 4;
+
+    sky_render(&self->sky);
+    state.renderer.clear_color = self->sky.clear_color;
+
     // prepare (mesh) chunks from nearest to farthest
     world_foreach_ftb(self, c0) {
         if (c0 != NULL) {
@@ -274,9 +345,9 @@ void world_render(struct World *self) {
     renderer_set_view_proj(&state.renderer);
     shader_uniform_texture2D(state.renderer.shaders[SHADER_CHUNK], "tex", state.renderer.block_atlas.atlas.texture, 0);
 
-    shader_uniform_vec4(state.renderer.shaders[SHADER_CHUNK], "fog_color", state.renderer.clear_color);
-    shader_uniform_float(state.renderer.shaders[SHADER_CHUNK], "fog_near", (self->chunks_size / 2) * 32 - 12);
-    shader_uniform_float(state.renderer.shaders[SHADER_CHUNK], "fog_far", (self->chunks_size / 2) * 32 - 4);
+    shader_uniform_vec4(state.renderer.shaders[SHADER_CHUNK], "fog_color", self->sky.fog_color);
+    shader_uniform_float(state.renderer.shaders[SHADER_CHUNK], "fog_near", self->sky.fog_near);
+    shader_uniform_float(state.renderer.shaders[SHADER_CHUNK], "fog_far", self->sky.fog_far);
 
     // render solid geometry in no particular order
     world_foreach(self, c1) {

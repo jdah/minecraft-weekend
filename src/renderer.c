@@ -13,6 +13,7 @@ void renderer_init(struct Renderer *self) {
             { .index = 1, .name = "uv" },
             { .index = 2, .name = "color" }
         });
+
     self->shaders[SHADER_CHUNK] = shader_create(
         "res/shaders/chunk.vs", "res/shaders/chunk.fs",
         3, (struct VertexAttr[]) {
@@ -21,12 +22,21 @@ void renderer_init(struct Renderer *self) {
             { .index = 2, .name = "color" }
         });
 
+    self->shaders[SHADER_SKY] = shader_create(
+        "res/shaders/sky.vs", "res/shaders/sky.fs",
+        3, (struct VertexAttr[]) {
+            { .index = 0, .name = "position" },
+            { .index = 1, .name = "uv" }
+        });
+
     self->block_atlas = blockatlas_create(
         "res/images/blocks.png",
         (ivec2s) {{ 16, 16 }}
     );
 
     self->textures[TEXTURE_CROSSHAIR] = texture_create_from_path("res/images/crosshair.png");
+    self->textures[TEXTURE_SUN] = texture_create_from_path("res/images/sun.png");
+    self->textures[TEXTURE_MOON] = texture_create_from_path("res/images/moon.png");
 
     self->vao = vao_create();
     self->vbo = vbo_create(GL_ARRAY_BUFFER, true);
@@ -158,6 +168,5 @@ void renderer_immediate_quad(
 
     vao_bind(self->vao);
     vbo_bind(self->ibo);
-    // glDrawArrays(GL_TRIANGLES, 0, 4);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *) 0);
 }

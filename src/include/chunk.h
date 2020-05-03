@@ -13,6 +13,11 @@ struct World;
 #define CHUNK_SIZE_Y 32
 #define CHUNK_SIZE_Z 32
 
+// max(CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z)
+#define CHUNK_SIZE_MAX 32
+
+#define CHUNK_SIZE_XZ ((ivec2s) {{ CHUNK_SIZE_X, CHUNK_SIZE_Z }})
+
 #define CHUNK_SIZE ((ivec3s) {{ CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z }})
 #define CHUNK_SIZE_F ((vec3s) {{ CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z }})
 
@@ -66,6 +71,9 @@ struct Chunk {
     struct {
         // if true, this chunk contains no blocks
         bool empty: 1;
+
+        // if true, this chunk is generating
+        bool generating: 1;
     } flags;
     
     struct ChunkMesh *mesh;
@@ -94,7 +102,7 @@ void chunk_on_modify(
 #define LIGHT_MASK 0x000000000FFFF0000
 #define LIGHT_OFFSET 16
 
-#define SUNLIGHT_MASK 0x00000000F00000000
+#define SUNLIGHT_MASK 0x0000000F00000000
 #define SUNLIGHT_OFFSET 32
 
 #define ALL_LIGHT_MASK 0x0000000FFFFF0000

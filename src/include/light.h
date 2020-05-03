@@ -16,5 +16,8 @@
 
 void light_add(struct World *world, ivec3s pos, u16 light);
 void light_remove(struct World *world, ivec3s pos);
+void all_light_remove(struct World *world, ivec3s pos);
+void all_light_apply(struct Chunk *chunk);
+void all_light_update(struct World *world, ivec3s pos);
 
 #endif

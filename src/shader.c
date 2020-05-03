@@ -122,3 +122,10 @@ void shader_uniform_vec3(struct Shader self, char *name, vec3s v) {
 void shader_uniform_vec4(struct Shader self, char *name, vec4s v) {
     glUniform4f(glGetUniformLocation(self.handle, name), v.x, v.y, v.z, v.w);
 }
+
+void shader_uniform_int(struct Shader self, char *name, int v) {
+    glUniform1i(glGetUniformLocation(self.handle, name), v);
+}
+void shader_uniform_uint(struct Shader self, char *name, unsigned int v) {
+    glUniform1ui(glGetUniformLocation(self.handle, name), v);
+}

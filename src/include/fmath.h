@@ -32,6 +32,7 @@
 #define floori(_x) ((int) (floor((double) (_x))))
 #define sign(_x) ({ __typeof__(_x) _xx = (_x);\
     ((__typeof__(_x)) ( (((__typeof__(_x)) 0) < _xx) - (_xx < ((__typeof__(_x)) 0))));})
+#define lerpf(_a, _b, _t) ({ __typeof__(_t) _u = (_t); ((_a) * (1 - _u)) + ((_b) * _u); })
 
 #define max(a, b) ({\
     __typeof__ (a) _a = (a); \

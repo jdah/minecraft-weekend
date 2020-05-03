@@ -1,6 +1,7 @@
 #include "include/chunk.h"
 #include "include/state.h"
 #include "include/world.h"
+#include "include/light.h"
 
 void chunk_init(struct Chunk *self, struct World *world, ivec3s offset) {
     memset(self, 0, sizeof(struct Chunk));
@@ -50,18 +51,44 @@ void chunk_on_modify(
     u64 prev, u64 data) {
     self->mesh->flags.dirty = true;
 
-    u64 prev_block = chunk_data_to_block(prev),
+    enum BlockId prev_block = chunk_data_to_block(prev),
         data_block = chunk_data_to_block(data);
 
+    u32 prev_all_light = chunk_data_to_all_light(prev),
+        all_light = chunk_data_to_all_light(data);    
+
     if (data_block != prev_block) {
-        self->count += data_block == AIR ? -1 : 1;
+        if (data_block == AIR) {
+            self->count--;
+            world_heightmap_recalculate(
+                self->world,
+                (ivec2s) {{ self->position.x + pos.x, self->position.z + pos.z }});
+            
+            // propagate lighting through this block
+            if (!self->flags.generating) {
+                all_light_update(self->world, glms_ivec3_add(pos, self->position));
+            }
+        } else {
+            self->count++;
+            world_heightmap_update(
+                self->world, (ivec3s) {{ 
+                    self->position.x + pos.x,
+                    self->position.y + pos.y,
+                    self->position.z + pos.z
+                }});
+            
+            // remove light at this block
+            if (!self->flags.generating) {
+                all_light_remove(self->world, glms_ivec3_add(pos, self->position));
+            }
+        }
     }
 
     self->flags.empty = self->count == 0;
 
     // mark any chunks that could have been affected as dirty
-    if (data_block != prev_block
-        && chunk_on_bounds(pos)) {
+    if ((data_block != prev_block || prev_all_light != all_light)
+            && chunk_on_bounds(pos)) {
         struct Chunk *neighbors[6] = { NULL };
         chunk_get_bordering_chunks(self, pos, neighbors);
 

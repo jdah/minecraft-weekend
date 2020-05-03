@@ -1,12 +1,6 @@
 #include "include/chunk.h"
 #include "include/state.h"
 
-// TODO:
-// Vertex layout
-// - 20 bits of lighting (sunlight + RGB + intensity)
-// - 15 bits of position (x, y, z)
-// - 8 bits of texture (flat index)
-
 static const u32 FACE_INDICES[] = {1, 0, 3, 1, 3, 2};
 static const u32 UNIQUE_INDICES[] = {1, 0, 5, 2};
 static const u32 CUBE_INDICES[] = {
@@ -51,7 +45,6 @@ static const f32 CUBE_UVS[] = {
     1, 1
 };
 
-
 struct Face {
     // index of face indices in 'indices' ChunkMeshBuffer    
     size_t indices_base;
@@ -72,6 +65,15 @@ static const size_t BUFFER_SIZES[3] = {
 
 // appends data to the end of a ChunkMeshBuffer
 #define CBAPPEND(_type, _buffer, _v) ((_type *) (_buffer)->data)[(_buffer)->index++] = (_v)
+
+// gets data at the specified position in the chunk if the position is inside of
+// the chunk, otherwise gets data from the world
+#define CHUNK_WORLD_GET_DATA(chunk, pos) ({\
+    ivec3s p = (pos);\
+    struct Chunk *c = (chunk);\
+    chunk_in_bounds(p) ?\
+        chunk_get_data(c, p) :\
+        world_get_data(c->world, glms_ivec3_add(c->position, p));})
 
 static void buffer_init(struct ChunkMeshBuffer *self, enum BufferType type) {
     memset(self, 0, sizeof(struct ChunkMeshBuffer));
@@ -237,6 +239,7 @@ static inline void emit_face(
         // TODO: make buffers more robust, this is a hack
         // use lighting data of this face's NEIGHBOR to light it
         u32 light = chunk_data_to_all_light(neighbor_data);
+        light |= ((u32) direction) << 20;
         CBAPPEND(f32, data, *((f32 *) (&light)));
     }
 
@@ -344,15 +347,15 @@ static void chunkmesh_mesh(struct ChunkMesh *self) {
     chunkmesh_prepare(self);
 
     chunk_foreach(pos) {
-        vec3s fpos = IVEC3S2V(pos);
-        ivec3s wpos = glms_ivec3_add(pos, chunk->position);
+        vec3s pos_f = IVEC3S2V(pos);
+        ivec3s pos_world = glms_ivec3_add(pos, chunk->position);
 
         u64 data = chunk->data[chunk_pos_to_index(pos)];
         enum BlockId block_id = chunk_data_to_block(data);
 
         if(block_id != AIR) {
             struct Block block = BLOCKS[block_id];
-            bool transparent = block.is_transparent(chunk->world, wpos);
+            bool transparent = block.is_transparent(chunk->world, pos_world);
             
             if (block.is_sprite()) {
                 // emit_sprite(
@@ -365,31 +368,27 @@ static void chunkmesh_mesh(struct ChunkMesh *self) {
                 bool shorten_y = false;
 
                 if (block.is_liquid()) {
-                    ivec3s up = (ivec3s) {{ pos.x, pos.y + 1, pos.z }};
-
-                    if (chunk_in_bounds(up)) {
-                        shorten_y = !BLOCKS[chunk_get_block(chunk, up)].is_liquid();
-                    } else {
-                        shorten_y = !BLOCKS[world_get_block(chunk->world, glms_ivec3_add(up, chunk->position))].is_liquid();
-                    }
+                    shorten_y = !BLOCKS[
+                        chunk_data_to_block(
+                            CHUNK_WORLD_GET_DATA(
+                                chunk,
+                                ((ivec3s) {{ pos.x, pos.y + 1, pos.z }})))                                
+                        ].is_liquid();
                 }
 
                 for (enum Direction d = 0; d < 6; d++) {
                     ivec3s dv = DIR2IVEC3S(d);
-                    ivec3s neighbor = glms_ivec3_add(pos, dv), wneighbor = glms_ivec3_add(wpos, dv);
-                    u64 neighbor_data =
-                        chunk_in_bounds(neighbor) ?
-                            chunk_get_data(chunk, neighbor) :
-                            world_get_data(chunk->world, wneighbor);
+                    ivec3s n = glms_ivec3_add(pos, dv), n_world = glms_ivec3_add(pos_world, dv);
+                    u64 neighbor_data = CHUNK_WORLD_GET_DATA(chunk, n);
                     struct Block neighbor_block = BLOCKS[chunk_data_to_block(neighbor_data)]; 
 
-                    bool neighbor_transparent = neighbor_block.is_transparent(chunk->world, wneighbor);
+                    bool neighbor_transparent = neighbor_block.is_transparent(chunk->world, n_world);
                     if ((neighbor_transparent && !transparent) || (transparent && neighbor_block.id != block.id)) {
                         emit_face(
-                            self, data, neighbor_data, fpos, d,
+                            self, data, neighbor_data, pos_f, d,
                             atlas_offset(
                                 state.renderer.block_atlas.atlas,
-                                block.get_texture_location(chunk->world, wpos, d)),
+                                block.get_texture_location(chunk->world, pos_world, d)),
                             state.renderer.block_atlas.atlas.sprite_unit,
                             transparent, shorten_y);
                     }

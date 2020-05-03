@@ -7,6 +7,7 @@
 #include "include/camera.h"
 #include "include/state.h"
 #include "include/block.h"
+#include "include/sky.h"
 
 // global state
 struct State state;
@@ -34,7 +35,6 @@ void tick() {
     world_tick(&state.world);
     world_set_center(&state.world, world_pos_to_block(state.world.player.camera.position));
 
-
     static ivec3s last_light;
 
     if (state.window->keyboard.keys[GLFW_KEY_C].pressed_tick) {
@@ -59,7 +59,6 @@ void update() {
 }
 
 void render() {
-    state.renderer.clear_color = (vec4s) {{ 0.5f, 0.8f, 0.9f, 1.0f }};
     renderer_prepare(&state.renderer, PASS_3D);
     world_render(&state.world);
 

@@ -241,6 +241,22 @@ glm_ivec2_div(ivec2 a, ivec2 b, ivec2 dest) {
   dest[1] = a[1] / b[1];
 }
 
+
+/*!
+ * @brief mod vector with another component-wise modulo: d = a % b
+ *
+ * @param[in]  a    vector 1
+ * @param[in]  b    vector 2
+ * @returns         result = (a[0]%b[0], a[1]%b[1])
+ */
+CGLM_INLINE
+void
+glm_ivec2_mod(ivec2 a, ivec2 b, ivec2 dest) {
+  dest[0] = a[0] % b[0];
+  dest[1] = a[1] % b[1];
+}
+
+
 /*!
  * @brief div vector with scalar: d = v / s
  *
