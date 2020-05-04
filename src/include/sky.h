@@ -13,6 +13,10 @@ enum CelestialBody {
     SUN, MOON
 };
 
+enum SkyState {
+    DAY = 0, NIGHT, SUNRISE, SUNSET
+};
+
 struct Sky {
     struct World *world;
 
@@ -21,6 +25,11 @@ struct Sky {
 
     // fog and clear colors
     vec4s fog_color, clear_color;
+
+    vec4s sunlight_color;
+
+    enum SkyState state, state_day_night;
+    f32 sky_state_progress, day_night_progress;
 
     struct VBO ibo, vbo;
     struct VAO vao;

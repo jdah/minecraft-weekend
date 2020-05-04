@@ -19,6 +19,8 @@ enum ShaderType {
 #define TEXTURE_LAST TEXTURE_MOON
 enum Textures {
     TEXTURE_CROSSHAIR,
+    TEXTURE_CLOUDS,
+    TEXTURE_STAR,
     TEXTURE_SUN,
     TEXTURE_MOON
 };

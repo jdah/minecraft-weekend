@@ -186,6 +186,8 @@ void world_init(struct World *self) {
     memset(self, 0, sizeof(struct World));
     sky_init(&self->sky, self);
 
+    self->ticks = 0;
+
     self->throttles.load.max = 1;
     self->throttles.mesh.max = 8;
 
@@ -193,7 +195,7 @@ void world_init(struct World *self) {
     self->unloaded_data.list = malloc(self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
 
     player_init(&self->player, self);
-    self->chunks_size = 8;
+    self->chunks_size = 10;
     self->chunks = calloc(1, NUM_CHUNKS(self) * sizeof(struct Chunk *));
     self->heightmaps = calloc(1, NUM_HEIGHTMAPS(self) * sizeof(struct Heightmap *));
 
@@ -317,10 +319,6 @@ void world_set_center(struct World *self, ivec3s center_pos) {
         }
     }
 
-    if (self->heightmaps[0] == NULL) {
-        printf("what!\n");
-    }
-
     load_empty_chunks(self);
 }
 
@@ -344,10 +342,12 @@ void world_render(struct World *self) {
     renderer_set_camera(&state.renderer, CAMERA_PERSPECTIVE);
     renderer_set_view_proj(&state.renderer);
     shader_uniform_texture2D(state.renderer.shaders[SHADER_CHUNK], "tex", state.renderer.block_atlas.atlas.texture, 0);
+    shader_uniform_vec4(state.renderer.shaders[SHADER_CHUNK], "sunlight_color", self->sky.sunlight_color);
 
     shader_uniform_vec4(state.renderer.shaders[SHADER_CHUNK], "fog_color", self->sky.fog_color);
     shader_uniform_float(state.renderer.shaders[SHADER_CHUNK], "fog_near", self->sky.fog_near);
     shader_uniform_float(state.renderer.shaders[SHADER_CHUNK], "fog_far", self->sky.fog_far);
+    
 
     // render solid geometry in no particular order
     world_foreach(self, c1) {
@@ -384,6 +384,8 @@ void world_update(struct World *self) {
 }
 
 void world_tick(struct World *self) {
+    self->ticks++;
+
     world_foreach(self, chunk) {
         if (chunk != NULL) {
             chunk_tick(chunk);

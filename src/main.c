@@ -35,6 +35,15 @@ void tick() {
     world_tick(&state.world);
     world_set_center(&state.world, world_pos_to_block(state.world.player.camera.position));
 
+    // time warp
+    if (state.window->keyboard.keys[GLFW_KEY_L].down) {
+        state.world.ticks += 30;
+    }
+
+    if (state.window->keyboard.keys[GLFW_KEY_P].pressed_tick) {
+        state.world.ticks += (TOTAL_DAY_TICKS) / 3;
+    }
+
     static ivec3s last_light;
 
     if (state.window->keyboard.keys[GLFW_KEY_C].pressed_tick) {

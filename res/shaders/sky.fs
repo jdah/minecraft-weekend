@@ -2,6 +2,7 @@
 
 uniform sampler2D tex;
 uniform bool use_tex;
+uniform vec2 uv_offset;
 
 uniform vec4 color;
 uniform vec4 fog_color;
@@ -14,8 +15,8 @@ in vec3 v_viewpos;
 out vec4 frag_color;
 
 void main() {
-    frag_color = color * (use_tex ? texture(tex, v_uv) : vec4(1.0));
+    frag_color = color * (use_tex ? texture(tex, v_uv + uv_offset) : vec4(1.0));
     
     float fog = smoothstep(fog_near, fog_far, length(v_viewpos));
-    frag_color = mix(frag_color, fog_color, fog);
+    frag_color = vec4(mix(frag_color, fog_color, fog).rgb, frag_color.a);
 }

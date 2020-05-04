@@ -3,10 +3,6 @@
 
 #include <noise1234.h>
 
-#define SRAND(seed) srand(seed)
-#define RAND(min, max) ((rand() % (max - min + 1)) + min)
-#define RANDCHANCE(chance) ((RAND(0, 100000) / 100000.0) <= chance)
-
 #define RADIAL2I(c, r, v)\
     (glms_vec2_norm(glms_vec2_sub(IVEC2S2V((c)), IVEC2S2V((v)))) / glms_vec2_norm(IVEC2S2V((r))))
 

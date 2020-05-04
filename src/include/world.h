@@ -8,8 +8,8 @@
 #include "player.h"
 #include "sky.h"
 
-#define DAY_TICKS 600
-#define NIGHT_TICKS 600
+#define DAY_TICKS (14 * 60 * TICKRATE)
+#define NIGHT_TICKS (10 * 60 * TICKRATE)
 #define TOTAL_DAY_TICKS (DAY_TICKS + NIGHT_TICKS)
 
 struct WorldUnloadedData {
@@ -41,6 +41,9 @@ struct Heightmap {
 struct World {
     struct Sky sky;
     struct EntityPlayer player;
+
+    // tick counter
+    u64 ticks;
 
     // Size of one dimension of World::chunks
     size_t chunks_size;

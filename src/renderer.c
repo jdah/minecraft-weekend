@@ -35,6 +35,8 @@ void renderer_init(struct Renderer *self) {
     );
 
     self->textures[TEXTURE_CROSSHAIR] = texture_create_from_path("res/images/crosshair.png");
+    self->textures[TEXTURE_CLOUDS] = texture_create_from_path("res/images/clouds.png"); 
+    self->textures[TEXTURE_STAR] = texture_create_from_path("res/images/star.png");
     self->textures[TEXTURE_SUN] = texture_create_from_path("res/images/sun.png");
     self->textures[TEXTURE_MOON] = texture_create_from_path("res/images/moon.png");
 
