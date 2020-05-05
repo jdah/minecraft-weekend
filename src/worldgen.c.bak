@@ -1,5 +1,5 @@
-#include "include/world.h"
-#include "include/chunk.h"
+#include "world.h"
+#include "chunk.h"
 
 #include <noise1234.h>
 

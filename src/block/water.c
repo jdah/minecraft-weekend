@@ -1,4 +1,4 @@
-#include "../include/block.h"
+#include "block.h"
 
 static ivec2s get_texture_location(struct World *world, ivec3s pos, enum Direction d) {
     return (ivec2s) {{ 0, 15 }};

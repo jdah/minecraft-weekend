@@ -1,13 +1,8 @@
-#include "include/window.h"
-#include "include/gfx.h"
+#include "gfx/window.h"
+#include "gfx/gfx.h"
 
-#include "include/vao.h"
-#include "include/vbo.h"
-#include "include/shader.h"
-#include "include/camera.h"
-#include "include/state.h"
-#include "include/block.h"
-#include "include/sky.h"
+#include "state.h"
+#include "block/block.h"
 
 // global state
 struct State state;
@@ -28,7 +23,7 @@ void destroy() {
 }
 
 // TODO: remove this
-#include "include/light.h"
+#include "world/light.h"
 
 void tick() {
     state.ticks++;

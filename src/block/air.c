@@ -1,4 +1,4 @@
-#include "../include/block.h"
+#include "block.h"
 
 void air_init() {
     struct Block air = BLOCK_DEFAULT;
