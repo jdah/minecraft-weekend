@@ -157,8 +157,8 @@ bool world_heightmap_update(struct World *self, ivec3s p) {
 // recalculate the heightmap value at the specified x, z coordinate
 void world_heightmap_recalculate(struct World *self, ivec2s p) {
     assert(world_in_bounds(self, (ivec3s) {{ p.x, 0, p.y }}));
-    s64 y_min = (self->chunks_origin.y - ((self->chunks_size / 2) * CHUNK_SIZE.y)),
-        y_max = (self->chunks_origin.y + ((self->chunks_size / 2) * CHUNK_SIZE.y));
+    s64 y_min = self->chunks_origin.y * CHUNK_SIZE.y,
+        y_max = (self->chunks_origin.y + self->chunks_size) * CHUNK_SIZE.y;
 
     for (s64 y = y_max; y >= y_min; y--) {
         ivec3s w = (ivec3s) {{ p.x, y, p.y }};
@@ -177,9 +177,20 @@ void world_load_chunk(struct World *self, ivec3s offset) {
     chunk_init(chunk, self, offset);
     chunk->flags.generating = true;
     worldgen_generate(chunk);
+
+    // set blocks which were previously unloaded
+    for (size_t i = 0; i < self->unloaded_data.size; i++) {
+        struct WorldUnloadedData data = self->unloaded_data.list[i];
+        if (!ivec3scmp(chunk->offset, world_pos_to_offset(data.pos))) {
+            chunk_set_block(chunk, world_pos_to_chunk_pos(data.pos), data.data);
+            world_remove_unloaded_data(self, i);
+        }
+    }
+
     chunk->flags.generating = false;
+
     self->chunks[world_chunk_index(self, chunk->offset)] = chunk;
-    all_light_apply(chunk);
+    chunk_after_generate(chunk);
 }
 
 void world_init(struct World *self) {
@@ -187,6 +198,9 @@ void world_init(struct World *self) {
     sky_init(&self->sky, self);
 
     self->ticks = 0;
+
+    SRAND(NOW());
+    self->seed = RAND(0, ULONG_MAX - 1);
 
     self->throttles.load.max = 1;
     self->throttles.mesh.max = 8;
@@ -304,6 +318,7 @@ void world_set_center(struct World *self, ivec3s center_pos) {
         } else if (world_heightmap_in_bounds(self, h->offset)) {
             self->heightmaps[world_heightmap_index(self, h->offset)] = h;
         } else {
+            free(h->worldgen_data);
             free(h->data);
             free(h);
         }
@@ -312,9 +327,10 @@ void world_set_center(struct World *self, ivec3s center_pos) {
     // Create empty heightmaps
     for (size_t i = 0; i < NUM_HEIGHTMAPS(self); i++) {
         if (self->heightmaps[i] == NULL) {
-            self->heightmaps[i] = malloc(sizeof(struct Heightmap));
+            self->heightmaps[i] = calloc(1, sizeof(struct Heightmap));
             self->heightmaps[i]->offset = world_heightmap_offset(self, i);
             self->heightmaps[i]->data = malloc(CHUNK_SIZE.x * CHUNK_SIZE.z * sizeof(s64));
+            self->heightmaps[i]->worldgen_data = malloc(CHUNK_SIZE.x * CHUNK_SIZE.z * sizeof(struct WorldgenData));
             memsetl(self->heightmaps[i]->data, HEIGHTMAP_UNKNOWN, CHUNK_SIZE.x * CHUNK_SIZE.z * sizeof(s64));
         }
     }

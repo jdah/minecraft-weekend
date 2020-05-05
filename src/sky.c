@@ -146,8 +146,8 @@ static mat4s celestial_model(struct Sky *self, enum CelestialBody body, vec3s ce
         angle = fmodf(TAU + (self->day_night_progress * (end - start)) + start, TAU);
 
     mat4s m = glms_mat4_identity();
-    m = glms_rotate(m, radians(-90.0f), (vec3s) {{ 0.0f, 1.0f, 0.0f }});
     m = glms_translate(m, glms_vec3_add(center, (vec3s) {{ 0.0f, 4.0f, 0.0f }}));
+    m = glms_rotate(m, radians(-90.0f), (vec3s) {{ 0.0f, 1.0f, 0.0f }});
     m = glms_rotate(m, angle, (vec3s) {{ 1.0f, 0.0f, 0.0f }});
     m = glms_translate(m, (vec3s) {{ 0.0f, 0.0f, 10.0f }});
     m = glms_scale(m, (vec3s) {{ 8.0f, 8.0f, 0 }});
@@ -209,8 +209,8 @@ static void stars_render(struct Sky *self, vec3s center, struct Texture tex) {
                 0.0f;
 
         mat4s m = glms_mat4_identity();
-        m = glms_rotate(m, radians(-90.0f), (vec3s) {{ 0.0f, 1.0f, 0.0f }});
         m = glms_translate(m, glms_vec3_add(center, (vec3s) {{ 0.0f, 0.0f, 0.0f }}));
+        m = glms_rotate(m, radians(-90.0f), (vec3s) {{ 0.0f, 1.0f, 0.0f }});
         m = glms_rotate(m, angle + angle_offset, (vec3s) {{ 1.0f, -0.3f, 0.25f }});
         m = glms_translate(m, (vec3s) {{ x_offset, y_offset, z_offset }});
         m = glms_scale(m, (vec3s) {{ 0.2f + scale_offset, 0.2f + scale_offset, 0 }});
@@ -340,19 +340,22 @@ void sky_render(struct Sky *self) {
     glDepthMask(GL_TRUE);
 
     // clouds
+    const f32 clouds_size = 2048.0f, clouds_height = 192.0f;
+
     glDisable(GL_CULL_FACE);
     shader_uniform_vec2(
         state.renderer.shaders[SHADER_SKY], "uv_offset",
         (vec2s) {{
-            fmodf(center.x, 2048.0f) / 2048.0f,
-            ((f32) (self->world->ticks % (TOTAL_DAY_TICKS / 3))) / (TOTAL_DAY_TICKS / 3) }});
+            fmodf(center.x, clouds_size) /  clouds_size,
+            (fmodf(center.z, clouds_size) / clouds_size) +
+                ((f32) (self->world->ticks % (TOTAL_DAY_TICKS / 3))) / (TOTAL_DAY_TICKS / 3) }});
     shader_uniform_float(state.renderer.shaders[SHADER_SKY], "fog_near", self->fog_near * 5.0f);
     shader_uniform_float(state.renderer.shaders[SHADER_SKY], "fog_far", self->fog_far * 5.0f);
     plane_render(
         self, &state.renderer.textures[TEXTURE_CLOUDS],
         cloud_color,
-        plane_model((vec3s) {{ center.x, 192.0f, center.z }},
+        plane_model((vec3s) {{ center.x, clouds_height, center.z }},
             (vec3s) {{ radians(-90.0f), 0.0f, 0.0f }},
-            (vec3s) {{ 2048.0f, 2048.0f, 0 }}));
+            (vec3s) {{ clouds_size, clouds_size, 0 }}));
     glEnable(GL_CULL_FACE);
 }

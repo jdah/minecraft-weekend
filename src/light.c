@@ -154,7 +154,6 @@ void all_light_update(struct World *world, ivec3s pos) {
             pos.y > world_heightmap_get(world, (ivec2s) {{ pos.x, pos.z }})) {
             world_set_sunlight(world, pos, LIGHT_MAX);
             ENQUEUE(&queue, ((struct LightNode) { .pos = pos }));
-            printf("doin it\n");
         }
 
         add_propagate(world, &queue, mask, offset, sunlight ? SUNLIGHT : DEFAULT_LIGHT);
@@ -173,32 +172,29 @@ void all_light_apply(struct Chunk *chunk) {
     // propagate sunlight for this chunk
     for (s64 x = 0; x < CHUNK_SIZE.x; x++) {
         for (s64 z = 0; z < CHUNK_SIZE.z; z++) {
-            s64 c_h = HEIGHTMAP_GET(heightmap, ((ivec2s) {{ x, z }})) - chunk->position.y;
-            
-            if (c_h < 0) {
-                continue;
-            }
+            s64 h = HEIGHTMAP_GET(heightmap, ((ivec2s) {{ x, z }}));
 
-            for (s64 y = CHUNK_SIZE.y - 1; y >= c_h; y--) {
-                s64 y_w = chunk->position.y + y;
+            for (s64 y = CHUNK_SIZE.y - 1; y >= 0; y--) {
                 ivec3s pos_c = (ivec3s) {{ x, y, z }},
                     pos_w = glms_ivec3_add(chunk->position, pos_c);
 
-                chunk_set_sunlight(chunk, pos_c, LIGHT_MAX);
+                if (pos_w.y > h) {
+                    chunk_set_sunlight(chunk, pos_c, LIGHT_MAX);
 
-                // check if this sunlight needs to be propagated in any
-                // N, E, S, W direction before queueing it
-                for (enum Direction d = NORTH; d <= WEST; d++) {
-                    ivec3s
-                        d_v = DIR2IVEC3S(d),
-                        pos_cn = glms_ivec3_add(pos_c, d_v),
-                        pos_wn = glms_ivec3_add(pos_w, d_v);
+                    // check if this sunlight needs to be propagated in any
+                    // N, E, S, W direction before queueing it
+                    for (enum Direction d = NORTH; d <= WEST; d++) {
+                        ivec3s
+                            d_v = DIR2IVEC3S(d),
+                            pos_cn = glms_ivec3_add(pos_c, d_v),
+                            pos_wn = glms_ivec3_add(pos_w, d_v);
 
-                    if (y_w < (chunk_in_bounds(pos_cn) ?
-                            HEIGHTMAP_GET(heightmap, ((ivec2s) {{ pos_cn.x, pos_cn.z }})) :
-                            world_heightmap_get(chunk->world, ((ivec2s) {{ pos_wn.x, pos_wn.z }})))) {
-                        ENQUEUE(&queue, ((struct LightNode) { .pos = pos_w }));
-                        break;
+                        if (pos_w.y < (chunk_in_bounds(pos_cn) ?
+                                HEIGHTMAP_GET(heightmap, ((ivec2s) {{ pos_cn.x, pos_cn.z }})) :
+                                world_heightmap_get(chunk->world, ((ivec2s) {{ pos_wn.x, pos_wn.z }})))) {
+                            ENQUEUE(&queue, ((struct LightNode) { .pos = pos_w }));
+                            break;
+                        }
                     }
                 }
             }

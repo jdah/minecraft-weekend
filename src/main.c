@@ -48,6 +48,7 @@ void tick() {
 
     if (state.window->keyboard.keys[GLFW_KEY_C].pressed_tick) {
         last_light = world_pos_to_block(state.world.player.camera.position);
+        srand(NOW());
         u8 r = rand() % 16, g = rand() % 16, b = rand() % 16;
         light_add(&state.world, last_light, (r << 12) | (g << 8) | (b << 4) | 0xF);
     }
@@ -55,6 +56,10 @@ void tick() {
     if (state.window->keyboard.keys[GLFW_KEY_V].pressed_tick) {
         light_remove(&state.world, last_light);
     }
+
+
+    // ivec3s p = world_pos_to_block(state.world.player.camera.position);
+    // printf("%d\n", world_heightmap_get(&state.world, (ivec2s) {{ p.x, p.z }}));
 }
 
 void update() {

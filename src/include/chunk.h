@@ -92,6 +92,7 @@ void chunk_render(struct Chunk *self, enum ChunkMeshPart part);
 void chunk_update(struct Chunk *self);
 void chunk_tick(struct Chunk *self);
 
+void chunk_after_generate(struct Chunk *self);
 void chunk_on_modify(
     struct Chunk *self, ivec3s pos,
     u64 prev, u64 data);

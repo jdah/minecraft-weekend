@@ -17,6 +17,11 @@ struct WorldUnloadedData {
     u32 data;
 };
 
+struct WorldgenData {
+    s64 h;
+    f32 t, r;
+};
+
 // LONG_MIN is used for the unknown value so everything is greater than it
 // this means world_heightmap_update will always pick a new value over
 // HEIGHTMAP_UNKNOWN
@@ -27,6 +32,13 @@ struct Heightmap {
 
     // heightmap data (highest block in this Y column)
     s64 *data;
+
+    // heightmap worldgen data (see worldgen.c for usage)
+    struct WorldgenData *worldgen_data;
+
+    struct {
+        bool generated: 1; 
+    } flags;
 };
 
 // computes the index of position (x, z) in a heightmap
@@ -44,6 +56,8 @@ struct World {
 
     // tick counter
     u64 ticks;
+
+    u64 seed;
 
     // Size of one dimension of World::chunks
     size_t chunks_size;
@@ -92,7 +106,7 @@ void world_tick(struct World *self);
 static inline ivec3s world_pos_to_offset(ivec3s pos) {
     return (ivec3s) {{
         (s32) floorf(pos.x / CHUNK_SIZE_F.x),
-        (s32) floorf(pos.y / CHUNK_SIZE_F.x),
+        (s32) floorf(pos.y / CHUNK_SIZE_F.y),
         (s32) floorf(pos.z / CHUNK_SIZE_F.z)
     }};
 }

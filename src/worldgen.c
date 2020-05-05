@@ -1,12 +1,12 @@
-#include "include/world.h"
-#include "include/chunk.h"
-
 #include <noise1234.h>
 
-#define RADIAL2I(c, r, v)\
+#include "include/chunk.h"
+#include "include/world.h"
+
+#define RADIAL2I(c, r, v) \
     (glms_vec2_norm(glms_vec2_sub(IVEC2S2V((c)), IVEC2S2V((v)))) / glms_vec2_norm(IVEC2S2V((r))))
 
-#define RADIAL3I(c, r, v)\
+#define RADIAL3I(c, r, v) \
     (glms_vec3_norm(glms_vec3_sub(IVEC3S2V((c)), IVEC3S2V((v)))) / glms_vec3_norm(IVEC3S2V((r))))
 
 #define WATER_LEVEL 64
@@ -18,13 +18,13 @@ enum Biome {
     MOUNTAIN
 };
 
-typedef void (*FSet)(struct Chunk*, s32, s32, s32, u32);
-typedef u32 (*FGet)(struct Chunk*, s32, s32, s32);
+typedef void (*FSet)(struct Chunk *, s32, s32, s32, u32);
+typedef u32 (*FGet)(struct Chunk *, s32, s32, s32);
 
 typedef f32 (*FNoise)(void *p, f32 s, f32 x, f32 z);
 
 struct Noise {
-    u8 params[512]; // either Octave or Combined
+    u8 params[512];  // either Octave or Combined
     FNoise compute;
 };
 
@@ -50,8 +50,8 @@ f32 octave_compute(struct Octave *p, f32 seed, f32 x, f32 z) {
 }
 
 struct Noise octave(s32 n, s32 o) {
-    struct Noise result = { .compute = (FNoise) octave_compute };
-    struct Octave params = { n, o };
+    struct Noise result = {.compute = (FNoise)octave_compute};
+    struct Octave params = {n, o};
     memcpy(&result.params, &params, sizeof(struct Octave));
     return result;
 }
@@ -61,14 +61,14 @@ f32 combined_compute(struct Combined *p, f32 seed, f32 x, f32 z) {
 }
 
 struct Noise combined(struct Noise *n, struct Noise *m) {
-    struct Noise result = { .compute = (FNoise) combined_compute };
-    struct Combined params = { n, m };
+    struct Noise result = {.compute = (FNoise)combined_compute};
+    struct Combined params = {n, m};
     memcpy(&result.params, &params, sizeof(struct Combined));
     return result;
 }
 
 static u32 _get(struct Chunk *chunk, s32 x, s32 y, s32 z) {
-    ivec3s p = (ivec3s) {{ x, y, z }};
+    ivec3s p = (ivec3s){{x, y, z}};
     if (chunk_in_bounds(p)) {
         return chunk_get_block(chunk, p);
     } else {
@@ -78,7 +78,7 @@ static u32 _get(struct Chunk *chunk, s32 x, s32 y, s32 z) {
 }
 
 static void _set(struct Chunk *chunk, s32 x, s32 y, s32 z, u32 d) {
-    ivec3s p = (ivec3s) {{ x, y, z }};
+    ivec3s p = (ivec3s){{x, y, z}};
     if (chunk_in_bounds(p)) {
         chunk_set_block(chunk, p, d);
     } else {
@@ -99,7 +99,7 @@ void tree(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
     }
 
     s32 lh = RAND(2, 3);
-    
+
     for (s32 xx = (x - 2); xx <= (x + 2); xx++) {
         for (s32 zz = (z - 2); zz <= (z + 2); zz++) {
             for (s32 yy = (y + h); yy <= (y + h + 1); yy++) {
@@ -146,13 +146,13 @@ void flowers(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
                 RANDCHANCE(0.5)) {
                 set(chunk, xx, y + 1, zz, flower);
             }
-        }   
+        }
     }
 }
 
 void orevein(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z, enum BlockId block) {
     s32 h = RAND(1, y - 4);
-    
+
     if (h < 0 || h > y - 4) {
         return;
     }
@@ -176,10 +176,9 @@ void orevein(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z, enum 
         for (s32 zz = (z - w); zz <= (z + w); zz++) {
             for (s32 yy = (h - i); yy <= (h + i); yy++) {
                 f32 d = 1.0f - RADIAL3I(
-                    ((ivec3s) {{ x, h, z }}),
-                    ((ivec3s) {{ l + 1, w + 1, i + 1 }}),
-                    ((ivec3s) {{ xx, yy, zz }})
-                );
+                                   ((ivec3s){{x, h, z}}),
+                                   ((ivec3s){{l + 1, w + 1, i + 1}}),
+                                   ((ivec3s){{xx, yy, zz}}));
 
                 if (get(chunk, xx, yy, zz) == STONE && RANDCHANCE(0.2 + d * 0.7)) {
                     set(chunk, xx, yy, zz, block);
@@ -199,10 +198,9 @@ void lavapool(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
     for (s32 xx = (x - l); xx <= (x + l); xx++) {
         for (s32 zz = (z - w); zz <= (z + w); zz++) {
             f32 d = 1.0f - RADIAL2I(
-                ((ivec2s) {{ x, z }}),
-                ((ivec2s) {{ l + 1, w + 1 }}),
-                ((ivec2s) {{ xx, zz }})
-            );
+                               ((ivec2s){{x, z}}),
+                               ((ivec2s){{l + 1, w + 1}}),
+                               ((ivec2s){{xx, zz}}));
 
             // all border blocks must be solid (or lava) to place lava
             bool allow = true;
@@ -211,7 +209,7 @@ void lavapool(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
                 for (s32 j = -1; j <= 1; j++) {
                     enum BlockId block = get(chunk, xx + i, h, zz + j);
                     if (block != LAVA &&
-                            BLOCKS[block].is_transparent(chunk->world, (ivec3s) {{ xx + i, h, zz + i }})) {
+                        BLOCKS[block].is_transparent(chunk->world, (ivec3s){{xx + i, h, zz + i}})) {
                         allow = false;
                         break;
                     }
@@ -230,240 +228,157 @@ void lavapool(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
 }
 
 void worldgen_generate(struct Chunk *chunk) {
-    // TODO: configure in world.c
-    const u64 seed = 2;
-    SRAND(seed + ivec3shash(chunk->offset));
+    SRAND(chunk->world->seed + ivec3shash(chunk->offset));
 
+    struct Heightmap *heightmap = chunk_get_heightmap(chunk);
 
-    for (s32 x = 0; x < CHUNK_SIZE.x; x++) {
-        for (s32 y = 0; y < CHUNK_SIZE.y; y++) {
-            for (s32 z = 0; z < CHUNK_SIZE.z; z++) {
-                ivec3s p = (ivec3s) {{ x, y, z}},
-                       w = glms_ivec3_add(p, chunk->position);
+    // generate worldgen data if it doesn't exist for this chunk column yet
+    if (!heightmap->flags.generated) {
+        heightmap->flags.generated = true;
 
-                enum BlockId block;
-                if (w.y > 64) {
-                    continue;
-                } else if (w.y > 63) {
-                    block = GRASS;
-                } else if (w.y > 60) {
-                    block = DIRT;
+        // biome noise
+        struct Noise n = octave(6, 0);
+
+        // auxiliary noise
+        struct Noise m = octave(6, 1);
+
+        // Different offsets of octave noise functions
+        struct Noise os[] = {
+            octave(8, 1),
+            octave(8, 2),
+            octave(8, 3),
+            octave(8, 4)};
+
+        // Two separate combined noise functions, each combining two different
+        // octave noise functions
+        struct Noise cs[] = {
+            combined(&os[0], &os[1]),
+            combined(&os[2], &os[3])};
+
+        for (s64 x = 0; x < CHUNK_SIZE.x; x++) {
+            for (s64 z = 0; z < CHUNK_SIZE.z; z++) {
+                s64 wx = chunk->position.x + x, wz = chunk->position.z + z;
+
+                // Sample each combined noise function for high/low results
+                const f32 base_scale = 1.3f;
+                s64 hr;
+                s64 hl = (cs[0].compute(&cs[0].params, chunk->world->seed, wx * base_scale, wz * base_scale) / 6.0f) - 4.0f;
+                s64 hh = (cs[1].compute(&cs[1].params, chunk->world->seed, wx * base_scale, wz * base_scale) / 5.0f) + 6.0f;
+
+                // Sample the biome noise and extra noise
+                f32 t = n.compute(&n.params, chunk->world->seed, wx, wz);
+                f32 r = m.compute(&m.params, chunk->world->seed, wx / 4.0f, wz / 4.0f) / 32.0f;
+
+                if (t > 0) {
+                    hr = hl;
                 } else {
-                    block = STONE;
+                    hr = max(hh, hl);
                 }
 
-                chunk_set_block(chunk, p, block);
+                // offset by water level and determine biome
+                s64 h = hr + WATER_LEVEL;
+
+                heightmap->worldgen_data[x * CHUNK_SIZE.x + z] = (struct WorldgenData){
+                    .h = h,
+                    .t = t,
+                    .r = r};
             }
         }
     }
 
-    return;
+    for (s64 x = 0; x < CHUNK_SIZE.x; x++) {
+        for (s64 z = 0; z < CHUNK_SIZE.z; z++) {
+            struct WorldgenData data = heightmap->worldgen_data[x * CHUNK_SIZE.x + z];
+            s64 h = data.h;
+            f32 t = data.t, r = data.r;
 
-    // biome noise
-    struct Noise n = octave(6, 0);
+            // beach is anything close-ish to water in biome AND height
+            enum Biome biome;
+            if (h < WATER_LEVEL) {
+                biome = OCEAN;
+            } else if (t < 0.08f && h < WATER_LEVEL + 2) {
+                biome = BEACH;
+            } else {
+                biome = PLAINS;
+            }
 
-    // ore noise
-    struct Noise m = octave(6, 1);
+            // dirt or sand depth
+            s64 d = r * 1.4f + 5.0f;
 
-    // Different offsets of octave noise functions
-    struct Noise os[] = {
-        octave(8, 1),
-        octave(8, 2),
-        octave(8, 3),
-        octave(8, 4),
-        octave(8, 5),
-        octave(8, 6),
-    };
+            enum BlockId top_block;
+            switch (biome) {
+                case OCEAN:
+                    if (r > 0.8f) {
+                        top_block = GRAVEL;
+                    } else if (r > 0.3f) {
+                        top_block = SAND;
+                    } else if (r > 0.15f && t < 0.08f) {
+                        top_block = CLAY;
+                    } else {
+                        top_block = DIRT;
+                    }
+                    break;
+                case BEACH:
+                    top_block = SAND;
+                    break;
+                case PLAINS:
+                    top_block = (t > 4.0f && r > 0.78f) ? GRAVEL : GRASS;
+                    break;
+                case MOUNTAIN:
+                    if (r > 0.8f) {
+                        top_block = GRAVEL;
+                    } else if (r > 0.7f) {
+                        top_block = DIRT;
+                    } else {
+                        top_block = STONE;
+                    }
+                    break;
+            }
 
-    // Two separate combined noise functions, each combining two different
-    // octave noise functions
-    struct Noise cs[] = {
-        combined(&os[0], &os[1]),
-        combined(&os[2], &os[3]),
-        combined(&os[4], &os[5]),
-    };
-
-    for (s32 x = 0; x < CHUNK_SIZE.x; x++) {
-        for (s32 y = 0; y < CHUNK_SIZE.y; y++) {
-            for (s32 z = 0; z < CHUNK_SIZE.z; z++) {
-                ivec3s
-                    p = (ivec3s) {{ x, y, z }},
-                    w = glms_ivec3_add(p, chunk->position);
+            for (s64 y = 0; y < CHUNK_SIZE.y; y++) {
+                s64 y_w = chunk->position.y + y;
 
                 enum BlockId block;
-
-                if (w.y > 64) {
+                if (y_w > h && y_w <= WATER_LEVEL) {
+                    block = WATER;
+                } else if (y_w > h) {
                     continue;
-                } else if (w.y > 63) {
-                    block = GRASS;
-                } else if (w.y > 60) {
-                    block = DIRT;
-                } else {
+                } else if (y_w == h) {
+                    block = top_block;
+                } else if (y_w > (h - d)) {
+                    if (top_block == GRASS) {
+                        block = DIRT;
+                    } else {
+                        block = top_block;
+                    }
+                } else if (y_w <= (h - d)) {
                     block = STONE;
                 }
 
-                chunk_set_block(chunk, p, block);
+                chunk_set_block(chunk, (ivec3s) {{ x, y, z }}, block);
             }
         }
-    }
 
+        //         if (RANDCHANCE(0.02)) {
+        //             orevein(chunk, _get, _set, x, h, z, COAL);
+        //         }
 
-    // for (s32 i = 0; i < 10; i++) {
-    //    for (s32 j = 0; j < 6; j++) {
-    //        if (j % 3 != 0) {
-    //             chunk_set_block(chunk, (ivec3s) {{ 3 + i, j, 3 + j }}, GLASS);
-    //        }
-    //    }
-    // }
+        //         if (RANDCHANCE(0.02)) {
+        //             orevein(chunk, _get, _set, x, h, z, COPPER);
+        //         }
 
+        //         if (biome != OCEAN && h <= (WATER_LEVEL + 3) && t < 0.1f && RANDCHANCE(0.001)) {
+        //             lavapool(chunk, _get, _set, x, h, z);
+        //         }
 
-    // biome noise
-    // struct Noise n = octave(6, 0);
+        //         if (biome == PLAINS && RANDCHANCE(0.005)) {
+        //             tree(chunk, _get, _set, x, h, z);
+        //         }
 
-    // // ore noise
-    // struct Noise m = octave(6, 1);
-
-    // // Different offsets of octave noise functions
-    // struct Noise os[] = {
-    //     octave(8, 1),
-    //     octave(8, 2),
-    //     octave(8, 3),
-    //     octave(8, 4),
-    //     octave(8, 5),
-    //     octave(8, 6),
-    // };
-
-    // // Two separate combined noise functions, each combining two different
-    // // octave noise functions
-    // struct Noise cs[] = {
-    //     combined(&os[0], &os[1]),
-    //     combined(&os[2], &os[3]),
-    //     combined(&os[4], &os[5]),
-    // };
-
-    // for (s32 x = 0; x < CHUNK_SIZE.x; x++) {
-    //     for (s32 z = 0; z < CHUNK_SIZE.z; z++) {
-    //         s32 wx = chunk->position.x + x, wz = chunk->position.z + z;
-
-    //         // Sample each combined noise function for high/low results
-    //         const f32 base_scale = 1.3f;
-    //         int hr;
-    //         int hl = (cs[0].compute(&cs[0].params, seed, wx * base_scale, wz * base_scale) / 6.0f) - 4.0f;
-    //         int hh = (cs[1].compute(&cs[1].params, seed, wx * base_scale, wz * base_scale) / 5.0f) + 6.0f;
-
-    //         // Sample the biome noise and extra noise
-    //         f32 t = n.compute(&n.params, seed, wx, wz);
-    //         f32 r = m.compute(&m.params, seed, wx / 4.0f, wz / 4.0f) / 32.0f;
-
-    //         if (t > 0) {
-    //             hr = hl;
-    //         } else {
-    //             hr = max(hh, hl);
-    //         }
-
-    //         // offset by water level and determine biome
-    //         s32 h = hr + WATER_LEVEL;
-
-    //         // beach is anything close-ish to water in biome AND height
-    //         enum Biome biome;
-    //         if (h < WATER_LEVEL) {
-    //             biome = OCEAN;
-    //         } else if (t < 0.08f && h < WATER_LEVEL + 2) {
-    //             biome = BEACH;
-    //         } else if (false) {
-    //             biome = MOUNTAIN;
-    //         } else {
-    //             biome = PLAINS;
-    //         }
-
-    //         if (biome == MOUNTAIN) {
-    //             h += (r + (-t / 12.0f)) * 2 + 2;
-    //         }
-
-    //         // dirt or sand depth
-    //         s32 d = r * 1.4f + 5.0f;
-
-    //         enum BlockId top_block;
-    //         switch (biome) {
-    //             case OCEAN:
-    //                 if (r > 0.8f) {
-    //                     top_block = GRAVEL;
-    //                 } else if (r > 0.3f) {
-    //                     top_block = SAND;
-    //                 } else if (r > 0.15f && t < 0.08f) {
-    //                     top_block = CLAY;
-    //                 } else {
-    //                     top_block = DIRT;
-    //                 }
-    //                 break;
-    //             case BEACH:
-    //                 top_block = SAND;
-    //                 break;
-    //             case PLAINS:
-    //                 top_block = (t > 4.0f && r > 0.78f) ? GRAVEL : GRASS;
-    //                 break;
-    //             case MOUNTAIN:
-    //                 if (r > 0.8f) {
-    //                     top_block = GRAVEL;
-    //                 } else if (r > 0.7f) {
-    //                     top_block = DIRT;
-    //                 } else {
-    //                     top_block = STONE;
-    //                 }
-    //                 break;
-    //         }
-
-
-    //         for (s32 y = 0; y < h; y++) {
-    //             enum BlockId block;
-    //             if (y == (h - 1)) {
-    //                 block = top_block;
-    //             } else if (y > (h - d)) {
-    //                 if (top_block == GRASS) {
-    //                     block = DIRT;
-    //                 } else {
-    //                     block = top_block;
-    //                 }
-    //             } else {
-    //                 block = STONE;
-    //             }
-
-    //             chunk_set_block(chunk, (ivec3s) {{ x, y, z }}, block);
-    //         }
-
-    //         // fill up to water level with water
-    //         for (s32 y = h; y < WATER_LEVEL; y++) {
-    //             chunk_set_block(chunk, (ivec3s) {{ x, y, z }}, WATER);
-    //         }
-
-    //         if (RANDCHANCE(0.02)) {
-    //             orevein(chunk, _get, _set, x, h, z, COAL);
-    //         }
-
-    //         if (RANDCHANCE(0.02)) {
-    //             orevein(chunk, _get, _set, x, h, z, COPPER);
-    //         }
-
-    //         if (biome != OCEAN && h <= (WATER_LEVEL + 3) && t < 0.1f && RANDCHANCE(0.001)) {
-    //             lavapool(chunk, _get, _set, x, h, z);
-    //         }
-
-    //         if (biome == PLAINS && RANDCHANCE(0.005)) {
-    //             tree(chunk, _get, _set, x, h, z);
-    //         }
-
-    //         if (biome == PLAINS && RANDCHANCE(0.0085)) {
-    //             flowers(chunk, _get, _set, x, h, z);
-    //         }
-    //     }
-    // }
-
-    // set data in this chunk which was previously unloaded
-        // for (size_t i = 0; i < self->unloaded_data.size; i++) {
-        //     struct WorldUnloadedData data = self->unloaded_data.list[i];
-        //     if (!ivec3scmp(c->offset, world_pos_to_offset(data.pos))) {
-        //         chunk_set_block(c, world_pos_to_chunk_pos(data.pos), data.data);
-        //         world_remove_unloaded_data(self, i);
+        //         if (biome == PLAINS && RANDCHANCE(0.0085)) {
+        //             flowers(chunk, _get, _set, x, h, z);
+        //         }
         //     }
         // }
+    }
 }

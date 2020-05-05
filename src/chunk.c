@@ -46,6 +46,20 @@ static void chunk_get_bordering_chunks(struct Chunk *self, ivec3s pos, struct Ch
     }
 }
 
+// MUST be run once a chunk has completed generating
+void chunk_after_generate(struct Chunk *self) {
+    for (s64 x = 0; x < CHUNK_SIZE.x; x++) {
+        for (s64 z = 0; z < CHUNK_SIZE.z; z++) {
+            world_heightmap_recalculate(
+                self->world,
+                (ivec2s) {{ self->position.x + x, self->position.z + z }});
+        }
+    }
+
+    all_light_apply(self);
+}
+
+// MUST be run after data inside of a chunk is modified
 void chunk_on_modify(
     struct Chunk *self, ivec3s pos,
     u64 prev, u64 data) {
@@ -58,30 +72,23 @@ void chunk_on_modify(
         all_light = chunk_data_to_all_light(data);    
 
     if (data_block != prev_block) {
-        if (data_block == AIR) {
-            self->count--;
-            world_heightmap_recalculate(
-                self->world,
-                (ivec2s) {{ self->position.x + pos.x, self->position.z + pos.z }});
-            
-            // propagate lighting through this block
-            if (!self->flags.generating) {
-                all_light_update(self->world, glms_ivec3_add(pos, self->position));
-            }
-        } else {
-            self->count++;
-            world_heightmap_update(
-                self->world, (ivec3s) {{ 
-                    self->position.x + pos.x,
-                    self->position.y + pos.y,
-                    self->position.z + pos.z
-                }});
-            
-            // remove light at this block
-            if (!self->flags.generating) {
-                all_light_remove(self->world, glms_ivec3_add(pos, self->position));
+        if (!self->flags.generating) {
+            ivec3s pos_w = glms_ivec3_add(self->position, pos);
+
+            if (BLOCKS[data_block].is_transparent(self->world, pos_w)) {
+                world_heightmap_recalculate(self->world, (ivec2s) {{ pos_w.x, pos_w.z }});
+                
+                // propagate lighting through this block
+                all_light_update(self->world, pos_w);
+            } else {
+                world_heightmap_update(self->world, pos_w);
+                
+                // remove light at this block
+                all_light_remove(self->world, pos_w);
             }
         }
+
+        self->count += (data_block == AIR ? -1 : 1);
     }
 
     self->flags.empty = self->count == 0;

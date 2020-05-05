@@ -14,5 +14,5 @@ uniform float fog_far;
 
 void main() {
     frag_color = texture(tex, v_uv) * v_color;
-    frag_color.a = 1.0 - smoothstep(fog_near, fog_far, length(v_viewpos));
+    frag_color *= 1.0 - smoothstep(fog_near, fog_far, length(v_viewpos));
 }
