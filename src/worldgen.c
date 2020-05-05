@@ -208,8 +208,7 @@ void lavapool(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
             for (s32 i = -1; i <= 1; i++) {
                 for (s32 j = -1; j <= 1; j++) {
                     enum BlockId block = get(chunk, xx + i, h, zz + j);
-                    if (block != LAVA &&
-                        BLOCKS[block].is_transparent(chunk->world, (ivec3s){{xx + i, h, zz + i}})) {
+                    if (block != LAVA && BLOCKS[block].transparent) {
                         allow = false;
                         break;
                     }
@@ -338,7 +337,8 @@ void worldgen_generate(struct Chunk *chunk) {
             for (s64 y = 0; y < CHUNK_SIZE.y; y++) {
                 s64 y_w = chunk->position.y + y;
 
-                enum BlockId block;
+                enum BlockId block = AIR;
+
                 if (y_w > h && y_w <= WATER_LEVEL) {
                     block = WATER;
                 } else if (y_w > h) {

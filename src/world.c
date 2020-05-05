@@ -177,7 +177,7 @@ void chunk_heightmap_recalculate(struct Chunk *chunk) {
                 pos_c.y = y;
                 pos_w.y = y + chunk->position.y;
 
-                if (!BLOCKS[chunk_get_block(chunk, pos_c)].is_transparent(chunk->world, pos_w)) {
+                if (!BLOCKS[chunk_get_block(chunk, pos_c)].transparent) {
                     HEIGHTMAP_SET(heightmap, ((ivec2s) {{ pos_c.x, pos_c.z }}), pos_w.y);
                     break;
                 }
@@ -194,7 +194,7 @@ void world_heightmap_recalculate(struct World *self, ivec2s p) {
 
     for (s64 y = y_max; y >= y_min; y--) {
         ivec3s w = (ivec3s) {{ p.x, y, p.y }};
-        if (!BLOCKS[world_get_block(self, w)].is_transparent(self, w)) {
+        if (!BLOCKS[world_get_block(self, w)].transparent) {
             world_heightmap_set(self, p, y);
             return;
         }

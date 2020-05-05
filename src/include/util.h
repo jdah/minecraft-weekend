@@ -3,6 +3,8 @@
 
 #define TICKRATE 60
 
+#define PACKED __attribute__((__packed__))
+
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>

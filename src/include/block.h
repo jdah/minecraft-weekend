@@ -3,6 +3,8 @@
 
 #include "util.h"
 #include "blockatlas.h"
+#include "blockmesh.h"
+#include "light.h"
 
 // Forward declaration
 struct World;
@@ -24,20 +26,34 @@ enum BlockId {
     LAVA = 13,
     CLAY = 14,
     GRAVEL = 15,
-    PLANKS = 16
+    PLANKS = 16,
+    TORCH = 17
 };
 
 // Always the highest valid block id
-#define BLOCK_ID_LAST PLANKS
+#define BLOCK_ID_LAST TORCH
 
 struct Block {
     enum BlockId id;
-    bool (*is_transparent)(struct World *world, ivec3s pos);
+
+    // if true, this block is treated as it is transparent
+    bool transparent;
+
+    // if true, this block is treated like a liquid
+    bool liquid;
+
+    // if true, this block is treated as a light source
+    bool can_emit_light;
+
+    // if true, this block's textures are determined with get_animation_frames
+    bool animated;
+
+    // the mesh type of this block, see blockmesh.h
+    enum BlockMeshType mesh_type;
+
     ivec2s (*get_texture_location)(struct World *world, ivec3s pos, enum Direction d);
-    bool (*is_animated)();
     void (*get_animation_frames)(ivec2s out[BLOCK_ATLAS_FRAMES]);
-    bool (*is_sprite)();
-    bool (*is_liquid)();
+    Torchlight (*get_torchlight)(struct World *world, ivec3s pos);
 };
 
 #define MAX_BLOCK_ID INT16_MAX

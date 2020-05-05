@@ -25,6 +25,6 @@ struct Atlas {
 struct Atlas atlas_create_from_texture(struct Texture texture, ivec2s sprite_size);
 struct Atlas atlas_create(char *path, ivec2s sprite_size);
 void atlas_destroy(struct Atlas self);
-vec2s atlas_offset(struct Atlas self, ivec2s pos);
+void atlas_get(struct Atlas self, ivec2s pos, vec2s *uv_min, vec2s *uv_max);
 
 #endif

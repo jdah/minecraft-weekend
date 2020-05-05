@@ -2,9 +2,9 @@
 #define CHUNK_H
 
 #include "util.h"
-#include "gfx.h"
-#include "vbo.h"
-#include "vao.h"
+#include "chunkmesh.h"
+#include "light.h"
+#include "block.h"
 
 // forward declarations
 struct World;
@@ -79,10 +79,6 @@ struct Chunk {
     struct ChunkMesh *mesh;
 };
 
-enum ChunkMeshPart {
-    BASE, TRANSPARENT
-};
-
 bool chunk_in_bounds(ivec3s pos);
 
 void chunk_init(struct Chunk *self, struct World *world, ivec3s offset);
@@ -100,14 +96,14 @@ void chunk_on_modify(
 #define BLOCK_MASK 0x000000000000FFFF
 #define BLOCK_OFFSET 0
 
-#define LIGHT_MASK 0x000000000FFFF0000
-#define LIGHT_OFFSET 16
+#define TORCHLIGHT_MASK 0x000000000FFFF0000
+#define TORCHLIGHT_OFFSET 16
 
 #define SUNLIGHT_MASK 0x0000000F00000000
 #define SUNLIGHT_OFFSET 32
 
-#define ALL_LIGHT_MASK 0x0000000FFFFF0000
-#define ALL_LIGHT_OFFSET 16
+#define LIGHT_MASK 0x0000000FFFFF0000
+#define LIGHT_OFFSET 16
 
 #define METADATA_MASK 0xFFFFFF7000000000
 #define METADATA_OFFSET 36
@@ -137,77 +133,11 @@ void chunk_on_modify(
             return (T) ((value & _mask) >> _offset);\
         }
 
-CHUNK_DECL_DATA(u16, block, BLOCK_MASK, BLOCK_OFFSET)
-CHUNK_DECL_DATA(u16, light, LIGHT_MASK, LIGHT_OFFSET)
-CHUNK_DECL_DATA(u8, sunlight, SUNLIGHT_MASK, SUNLIGHT_OFFSET)
-CHUNK_DECL_DATA(u32, all_light, ALL_LIGHT_MASK, ALL_LIGHT_OFFSET)
+CHUNK_DECL_DATA(enum BlockId, block, BLOCK_MASK, BLOCK_OFFSET)
+CHUNK_DECL_DATA(Torchlight, torchlight, TORCHLIGHT_MASK, TORCHLIGHT_OFFSET)
+CHUNK_DECL_DATA(Sunlight, sunlight, SUNLIGHT_MASK, SUNLIGHT_OFFSET)
+CHUNK_DECL_DATA(Light, light, LIGHT_MASK, LIGHT_OFFSET)
 CHUNK_DECL_DATA(u32, metadata, METADATA_MASK, METADATA_OFFSET)
 CHUNK_DECL_DATA(u64, data, DATA_MASK, DATA_OFFSET)
-
-// chunkmesh.c
-#define BUFFER_TYPE_LAST FACES
-enum BufferType {
-    DATA = 0, INDICES, FACES
-};
-
-struct ChunkMeshBuffer {
-    enum BufferType type;
-
-    // data store for this buffer, NULL if not currently allocated
-    void *data;
-
-    // capacity (in bytes) of *data
-    size_t capacity;
-    
-    // CURRENT index into *data, used when building mesh
-    size_t index;
-
-    // FINAL count of elements in *data
-    size_t count;
-};
-
-// Chunk mesh instance, should only be accessed on the main thread
-struct ChunkMesh {
-    struct Chunk *chunk;
-
-    // data, indices, faces buffers
-    struct ChunkMeshBuffer buffers[BUFFER_TYPE_LAST + 1];
-
-    // total number of vertices in this mesh
-    size_t vertex_count;
-
-    struct {
-        struct {
-            size_t offset, count;
-        } base, transparent;
-    } indices;
-
-    struct {
-        // if true, this mesh needs to be finalized (uploaded)
-        bool finalize: 1;
-
-        // if true, this mesh will be rebuilt next time it is rendered
-        bool dirty: 1;
-
-        // if true, this mesh will be depth sorted next time it is rendered
-        bool depth_sort: 1;
-
-        // if true, this mesh will be destroyed when its data is next accessible
-        bool destroy: 1;
-
-        // if true, index and face buffers are kept in memory after building
-        bool persist: 1;
-    } flags;
-
-    // buffer objects
-    struct VAO vao;
-    struct VBO vbo, ibo;
-};
-
-struct ChunkMesh *chunkmesh_create(struct Chunk *chunk);
-void chunkmesh_destroy(struct ChunkMesh *self);
-void chunkmesh_prepare_render(struct ChunkMesh *self);
-void chunkmesh_render(struct ChunkMesh *self, enum ChunkMeshPart part);
-void chunkmesh_set_persist(struct ChunkMesh *self, bool persist);
 
 #endif

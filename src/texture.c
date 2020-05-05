@@ -76,7 +76,11 @@ void atlas_destroy(struct Atlas self) {
     texture_destroy(self.texture);
 }
 
-vec2s atlas_offset(struct Atlas self, ivec2s pos) {
-    // Invert Y coordinates so sprite (0, 0) is top-left
-    return glms_vec2_mul(IVEC2S2V(((ivec2s) {{ pos.x, self.sprite_size.y - pos.y - 1}})), self.sprite_unit);
+void atlas_get(struct Atlas self, ivec2s pos, vec2s *uv_min, vec2s *uv_max) {
+    vec2s p_min = (vec2s) {{
+        pos.x * self.sprite_size.x,
+        (self.size.y - pos.y - 1) * self.sprite_size.y }};
+
+    *uv_min = glms_vec2_div(p_min, IVEC2S2V(self.texture.size));
+    *uv_max = glms_vec2_div(glms_vec2_add(p_min, IVEC2S2V(self.sprite_size)), IVEC2S2V(self.texture.size));
 }

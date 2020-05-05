@@ -50,11 +50,11 @@ void tick() {
         last_light = world_pos_to_block(state.world.player.camera.position);
         srand(NOW());
         u8 r = rand() % 16, g = rand() % 16, b = rand() % 16;
-        light_add(&state.world, last_light, (r << 12) | (g << 8) | (b << 4) | 0xF);
+        torchlight_add(&state.world, last_light, (r << 12) | (g << 8) | (b << 4) | 0xF);
     }
 
     if (state.window->keyboard.keys[GLFW_KEY_V].pressed_tick) {
-        light_remove(&state.world, last_light);
+        torchlight_remove(&state.world, last_light);
     }
 
 

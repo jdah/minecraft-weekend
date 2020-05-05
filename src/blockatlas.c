@@ -37,7 +37,7 @@ struct BlockAtlas blockatlas_create(char *path, ivec2s sprite_size) {
 
         for (size_t n = 0; n <= BLOCK_ID_LAST; n++) {
             struct Block block = BLOCKS[n];
-            if (block.id == 0 || !block.is_animated()) {
+            if (block.id == 0 || !block.animated) {
                 continue;
             }
 

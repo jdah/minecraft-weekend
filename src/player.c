@@ -41,7 +41,7 @@ void player_update(struct EntityPlayer *self) {
     for (size_t i = 0; i < 10; i++) {
         if (state.window->keyboard.keys[GLFW_KEY_0 + i].down) {
             self->selected_block = ((enum BlockId[]) {
-                DIRT,
+                TORCH,
                 STONE,
                 PLANKS,
                 SAND,

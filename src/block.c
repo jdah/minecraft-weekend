@@ -1,40 +1,30 @@
 #include "include/block.h"
 #include "include/blockatlas.h"
 
-static bool is_transparent(struct World *world, ivec3s pos) {
-    return false;
-}
-
 static ivec2s get_texture_location(struct World *world, ivec3s pos, enum Direction d) {
     assert(false);
     return GLMS_IVEC2_ZERO;
-}
-
-static bool is_animated() {
-    return false;
 }
 
 static void get_animation_frames(ivec2s out[BLOCK_ATLAS_FRAMES]) {
     return;
 }
 
-static bool is_sprite() {
-    return false;
-}
-
-static bool is_liquid() {
-    return false;
+static Torchlight get_torchlight(struct World *world, ivec3s pos) {
+    return 0x0000;
 }
 
 // Contains all default behavior for a block
 struct Block BLOCK_DEFAULT = {
     .id = -1,
-    .is_transparent = is_transparent,
+    .transparent = false,
+    .liquid = false,
+    .can_emit_light = false,
+    .animated = false,
+    .mesh_type = BLOCKMESH_DEFAULT,
     .get_texture_location = get_texture_location,
-    .is_animated = is_animated,
     .get_animation_frames = get_animation_frames,
-    .is_sprite = is_sprite,
-    .is_liquid = is_liquid
+    .get_torchlight = get_torchlight
 };
 
 extern void air_init();
@@ -54,6 +44,7 @@ extern void lava_init();
 extern void clay_init();
 extern void gravel_init();
 extern void planks_init();
+extern void torch_init();
 
 void block_init() {
     air_init();
@@ -73,4 +64,5 @@ void block_init() {
     clay_init();
     gravel_init();
     planks_init();
+    torch_init();
 }

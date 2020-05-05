@@ -49,7 +49,7 @@ static void chunk_get_bordering_chunks(struct Chunk *self, ivec3s pos, struct Ch
 // MUST be run once a chunk has completed generating
 void chunk_after_generate(struct Chunk *self) {
     chunk_heightmap_recalculate(self);
-    all_light_apply(self);
+    light_apply(self);
 }
 
 // MUST be run after data inside of a chunk is modified
@@ -61,23 +61,33 @@ void chunk_on_modify(
     enum BlockId prev_block = chunk_data_to_block(prev),
         data_block = chunk_data_to_block(data);
 
-    u32 prev_all_light = chunk_data_to_all_light(prev),
-        all_light = chunk_data_to_all_light(data);    
+    u32 prev_light = chunk_data_to_light(prev),
+        light = chunk_data_to_light(data); 
+
+    struct Block block_p = BLOCKS[prev_block], block = BLOCKS[data_block];
 
     if (data_block != prev_block) {
-        if (!self->flags.generating) {
-            ivec3s pos_w = glms_ivec3_add(self->position, pos);
+        ivec3s pos_w = glms_ivec3_add(self->position, pos);
 
-            if (BLOCKS[data_block].is_transparent(self->world, pos_w)) {
+        if (block_p.can_emit_light) {
+            light_remove(self->world, pos_w);
+        }
+
+        if (block.can_emit_light) {
+            torchlight_add(self->world, pos_w, block.get_torchlight(self->world, pos_w));
+        }
+
+        if (!self->flags.generating) {
+            if (block.transparent) {
                 world_heightmap_recalculate(self->world, (ivec2s) {{ pos_w.x, pos_w.z }});
                 
                 // propagate lighting through this block
-                all_light_update(self->world, pos_w);
+                light_update(self->world, pos_w);
             } else {
                 world_heightmap_update(self->world, pos_w);
                 
                 // remove light at this block
-                all_light_remove(self->world, pos_w);
+                light_remove(self->world, pos_w);
             }
         }
 
@@ -87,7 +97,7 @@ void chunk_on_modify(
     self->flags.empty = self->count == 0;
 
     // mark any chunks that could have been affected as dirty
-    if ((data_block != prev_block || prev_all_light != all_light)
+    if ((data_block != prev_block || light != prev_light)
             && chunk_on_bounds(pos)) {
         struct Chunk *neighbors[6] = { NULL };
         chunk_get_bordering_chunks(self, pos, neighbors);

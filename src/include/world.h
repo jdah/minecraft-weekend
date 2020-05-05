@@ -7,6 +7,7 @@
 #include "block.h"
 #include "player.h"
 #include "sky.h"
+#include "light.h"
 
 #define DAY_TICKS (14 * 60 * TICKRATE)
 #define NIGHT_TICKS (10 * 60 * TICKRATE)
@@ -181,11 +182,11 @@ static inline bool world_contains(struct World *self, ivec3s pos) {
     static inline T world_get_##_name(struct World *self, ivec3s pos) {\
         ivec3s offset = world_pos_to_offset(pos);\
         if (world_contains_chunk(self, offset)) {\
-            return (T) chunk_get_##_name(\
+            return chunk_get_##_name(\
                 world_get_chunk(self, offset),\
                 world_pos_to_chunk_pos(pos));\
         }\
-        return 0;\
+        return (T) 0;\
     }\
     static inline void world_set_##_name(struct World *self, ivec3s pos, T value) {\
         ivec3s offset = world_pos_to_offset(pos);\
@@ -198,9 +199,9 @@ static inline bool world_contains(struct World *self, ivec3s pos) {
     }
 
 WORLD_DECL_DATA(enum BlockId, block)
-WORLD_DECL_DATA(u16, light)
-WORLD_DECL_DATA(u8, sunlight)
-WORLD_DECL_DATA(u32, all_light)
+WORLD_DECL_DATA(Torchlight, torchlight)
+WORLD_DECL_DATA(Sunlight, sunlight)
+WORLD_DECL_DATA(Light, light)
 WORLD_DECL_DATA(u32, metadata)
 WORLD_DECL_DATA(u64, data)
 

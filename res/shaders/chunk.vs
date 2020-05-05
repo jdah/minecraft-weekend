@@ -31,15 +31,15 @@ void main() {
     // - (4) B
     // - (4) intensity
     vec3 light = vec3(
-        ((color & 0x0F000U) >> 12U) / 16.0,
-        ((color & 0x00F00U) >>  8U) / 16.0,
-        ((color & 0x000F0U) >>  4U) / 16.0
-    ) * ((color & 0x0000FU) / 16.0);
+        ((color & 0x0F000U) >> 12U) / 15.0,
+        ((color & 0x00F00U) >>  8U) / 15.0,
+        ((color & 0x000F0U) >>  4U) / 15.0
+    ) * ((color & 0x0000FU) / 15.0);
 
-    light += vec3(sunlight_color.rgb) * (((color & 0xF0000U) >> 16U) / 16.0);
+    light = max(vec3(sunlight_color.rgb) * (((color & 0xF0000U) >> 16U) / 15.0), light);
 
     // adjust light range to prevent entirely black lighting
-    const float min_light = 0.005;
+    const float min_light = 0.0025;
     light *= vec3(1.0 - min_light);
     light += vec3(min_light);
 
@@ -58,6 +58,8 @@ void main() {
     // set and gamma correct
     v_color = vec4(light, 1.0);
     v_color = vec4(pow(v_color.rgb, vec3(1.0 / 2.2)), v_color.a);
+
+    // v_color = vec4(vec3(sunlight_color.rgb) * (((color & 0xF0000U) >> 16U) / 15.0), 1.0);
 
     v_uv = uv;
     v_viewpos = ((v * m) * vec4(position, 1.0)).xyz;

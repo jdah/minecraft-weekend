@@ -348,7 +348,7 @@ void sky_render(struct Sky *self) {
         state.renderer.shaders[SHADER_SKY], "uv_offset",
         (vec2s) {{
             fmodf(center.x, clouds_size) /  clouds_size,
-            (fmodf(center.z, clouds_size) / clouds_size) +
+            (fmodf(-center.z, clouds_size) / clouds_size) +
                 ((f32) (self->world->ticks % (TOTAL_DAY_TICKS / 3))) / (TOTAL_DAY_TICKS / 3) }});
     shader_uniform_float(state.renderer.shaders[SHADER_SKY], "fog_near", self->fog_near * 5.0f);
     shader_uniform_float(state.renderer.shaders[SHADER_SKY], "fog_far", self->fog_far * 5.0f);
