@@ -92,6 +92,8 @@ void worldgen_generate(struct Chunk *);
 struct Heightmap *chunk_get_heightmap(struct Chunk *self);
 s64 world_heightmap_get(struct World *self, ivec2s p);
 bool world_heightmap_update(struct World *self, ivec3s p);
+
+void chunk_heightmap_recalculate(struct Chunk *chunk);
 void world_heightmap_recalculate(struct World *self, ivec2s p);
 
 void world_init(struct World *self);
@@ -135,7 +137,7 @@ static inline bool world_chunk_in_bounds(struct World *self, ivec3s offset) {
 // chunk offset -> world array index
 static inline size_t world_chunk_index(struct World *self, ivec3s offset) {
     ivec3s p = glms_ivec3_sub(offset, self->chunks_origin);
-    return (p.x * self->chunks_size * self->chunks_size) + (p.y * self->chunks_size) + p.z;
+    return (p.x * self->chunks_size * self->chunks_size) + (p.z * self->chunks_size) + p.y;
 }
 
 // world array index -> chunk offset
@@ -144,8 +146,8 @@ static inline ivec3s world_chunk_offset(struct World *self, size_t i) {
         self->chunks_origin,
         (ivec3s) {{
             i / (self->chunks_size * self->chunks_size),
-            (i / self->chunks_size) % self->chunks_size,
-            i % self->chunks_size
+            i % self->chunks_size,
+            (i / self->chunks_size) % self->chunks_size
         }}
     );
 }

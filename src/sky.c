@@ -83,18 +83,19 @@ enum SkyState get_sky_state(struct Sky *self) {
 // returns a value in [0, 1] indicating the "progress" of the current sky state
 // (how far along it is in ticks)
 f32 get_sky_state_progress(struct Sky *self) {
-    const u64 day_ticks = (self->world->ticks % TOTAL_DAY_TICKS);
+    const f32 day_ticks = (f32) (self->world->ticks % TOTAL_DAY_TICKS);
 
-    if (day_ticks <= HALF_SUN_CHANGE_TICKS) {
-        return 0.5f + ((f32) day_ticks) / ((f32) HALF_SUN_CHANGE_TICKS);
-    } else if (day_ticks <= (DAY_TICKS - HALF_SUN_CHANGE_TICKS)) {
-        return ((f32) (day_ticks - HALF_SUN_CHANGE_TICKS)) / ((f32) DAY_TICKS - SUN_CHANGE_TICKS);
-    } else if (day_ticks <= (DAY_TICKS + HALF_SUN_CHANGE_TICKS)) {
-        return ((f32) (day_ticks - (DAY_TICKS - HALF_SUN_CHANGE_TICKS))) / ((f32) SUN_CHANGE_TICKS);
-    } else if (day_ticks <= TOTAL_DAY_TICKS - HALF_SUN_CHANGE_TICKS) {
-        return ((f32) (day_ticks - (DAY_TICKS + HALF_SUN_CHANGE_TICKS))) / ((f32) NIGHT_TICKS - SUN_CHANGE_TICKS);
-    } else {
-        return ((f32) (day_ticks - (TOTAL_DAY_TICKS - HALF_SUN_CHANGE_TICKS))) / ((f32) SUN_CHANGE_TICKS);
+    switch (self->state) {
+        case SUNRISE:
+            return day_ticks <= HALF_SUN_CHANGE_TICKS ?
+                (0.5f + ((day_ticks / HALF_SUN_CHANGE_TICKS) * 0.5f)) :
+                (((day_ticks - (TOTAL_DAY_TICKS - HALF_SUN_CHANGE_TICKS)) / HALF_SUN_CHANGE_TICKS) * 0.5f);
+        case DAY:
+            return (day_ticks - HALF_SUN_CHANGE_TICKS) / DAY_TICKS;
+        case SUNSET:
+            return (day_ticks - (DAY_TICKS - HALF_SUN_CHANGE_TICKS)) / SUN_CHANGE_TICKS;
+        case NIGHT:
+            return (day_ticks - (DAY_TICKS + HALF_SUN_CHANGE_TICKS)) / NIGHT_TICKS;
     }
 }
 

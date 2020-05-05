@@ -48,11 +48,11 @@ void main() {
     if (direction == UP) {
         light *= 1.0;
     } else if (direction == EAST || direction == WEST) {
-        light *= 0.95;
+        light *= 0.85;
     } else if (direction == NORTH || direction == SOUTH) {
-        light *= 0.92;
+        light *= 0.70;
     } else {
-        light *= 0.89;
+        light *= 0.6;
     }
 
     // set and gamma correct

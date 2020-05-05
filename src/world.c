@@ -154,6 +154,38 @@ bool world_heightmap_update(struct World *self, ivec3s p) {
     return false;
 }
 
+// recalculate heightmap values for an entire chunk
+void chunk_heightmap_recalculate(struct Chunk *chunk) {
+    struct Heightmap *heightmap = chunk_get_heightmap(chunk);
+    ivec3s pos_c, pos_w;
+
+    for (s64 x = 0; x < CHUNK_SIZE.x; x++) {
+        for (s64 z = 0; z < CHUNK_SIZE.z; z++) {
+            pos_c.x = x;
+            pos_c.z = z;
+            pos_w.x = x + chunk->position.x;
+            pos_w.z = z + chunk->position.z;
+
+            s64 h = HEIGHTMAP_GET(heightmap, ((ivec2s) {{ x, z }}));
+
+            // don't set heightmap value if it's already above this column
+            if (h > (chunk->position.y + CHUNK_SIZE.y - 1)) {
+                continue;
+            }
+
+            for (s64 y = CHUNK_SIZE.y - 1; y >= 0; y--) {
+                pos_c.y = y;
+                pos_w.y = y + chunk->position.y;
+
+                if (!BLOCKS[chunk_get_block(chunk, pos_c)].is_transparent(chunk->world, pos_w)) {
+                    HEIGHTMAP_SET(heightmap, ((ivec2s) {{ pos_c.x, pos_c.z }}), pos_w.y);
+                    break;
+                }
+            }
+        }
+    }
+}
+
 // recalculate the heightmap value at the specified x, z coordinate
 void world_heightmap_recalculate(struct World *self, ivec2s p) {
     assert(world_in_bounds(self, (ivec3s) {{ p.x, 0, p.y }}));

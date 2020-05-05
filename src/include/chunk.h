@@ -26,15 +26,15 @@ struct World;
 #define chunk_foreach(_pname)\
     ivec3s _pname = GLMS_IVEC3_ZERO_INIT;\
     for (s32 x = 0; x < CHUNK_SIZE.x; x++)\
-        for (s32 y = 0; y < CHUNK_SIZE.y; y++)\
-            for (s32 z = 0;\
-                z < CHUNK_SIZE.z &&\
+        for (s32 z = 0; z < CHUNK_SIZE.z; z++)\
+            for (s32 y = 0;\
+                y < CHUNK_SIZE.y &&\
                 ((_pname.x = x) != INT32_MAX) &&\
                 ((_pname.y = y) != INT32_MAX) &&\
                 ((_pname.z = z) != INT32_MAX);\
-                z++)
+                y++)
 
-#define chunk_pos_to_index(p) (p.x * CHUNK_SIZE.y * CHUNK_SIZE.z + p.y * CHUNK_SIZE.z + p.z)
+#define chunk_pos_to_index(p) (p.x * CHUNK_SIZE.x * CHUNK_SIZE.z + p.z * CHUNK_SIZE.z + p.y)
 
 // returns true if pos is within chunk boundaries
 static inline bool chunk_in_bounds(ivec3s pos) {

@@ -48,14 +48,7 @@ static void chunk_get_bordering_chunks(struct Chunk *self, ivec3s pos, struct Ch
 
 // MUST be run once a chunk has completed generating
 void chunk_after_generate(struct Chunk *self) {
-    for (s64 x = 0; x < CHUNK_SIZE.x; x++) {
-        for (s64 z = 0; z < CHUNK_SIZE.z; z++) {
-            world_heightmap_recalculate(
-                self->world,
-                (ivec2s) {{ self->position.x + x, self->position.z + z }});
-        }
-    }
-
+    chunk_heightmap_recalculate(self);
     all_light_apply(self);
 }
 
