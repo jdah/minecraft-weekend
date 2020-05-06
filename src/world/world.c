@@ -227,6 +227,7 @@ void world_load_chunk(struct World *self, ivec3s offset) {
 
 void world_init(struct World *self) {
     memset(self, 0, sizeof(struct World));
+    ecs_init(&self->ecs, self);
     sky_init(&self->sky, self);
 
     self->ticks = 0;

@@ -8,6 +8,7 @@
 #include "chunk.h"
 #include "light.h"
 #include "sky.h"
+#include "../entity/ecs.h"
 
 #define DAY_TICKS (14 * 60 * TICKRATE)
 #define NIGHT_TICKS (10 * 60 * TICKRATE)
@@ -54,6 +55,9 @@ struct Heightmap {
 struct World {
     struct Sky sky;
     struct EntityPlayer player;
+
+    // entity component system
+    struct ECS ecs;
 
     // tick counter
     u64 ticks;

@@ -4,6 +4,10 @@
 #include "state.h"
 #include "block/block.h"
 
+// TODO: remove these
+#include "world/light.h"
+#include "entity/position.h"
+
 // global state
 struct State state;
 
@@ -21,9 +25,6 @@ void destroy() {
     renderer_destroy(&state.renderer);
     world_destroy(&state.world);
 }
-
-// TODO: remove this
-#include "world/light.h"
 
 void tick() {
     state.ticks++;
