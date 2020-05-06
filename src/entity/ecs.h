@@ -13,10 +13,10 @@ struct World;
 typedef u64 EntityId;
 typedef u64 ECSTag;
 
-#define ECSCOMPONENT_LAST C_POSITION
-enum ECSComponent {
-    C_POSITION = 0
-};
+// Gets the ID of the specified component type
+#define ECS_ID(T) HASH_S256(#T)
+
+#include "components.h"
 
 #define ECSEVENT_LAST ECS_TICK
 enum ECSEvent {
@@ -62,13 +62,21 @@ void _ecs_register_internal(
     enum ECSComponent id, size_t component_size,
     struct ECS *ecs, union ECSSystem system);
 
+void _ecs_add_internal(struct Entity entity, enum ECSComponent component_id, void *value);
+
+#define _ecs_add3(e, c, v) ({ __typeof__(v) _v = (v); _ecs_add_internal((e), (c), &_v); })
+#define _ecs_add2(e, c) _ecs_add_internal((e), (c), NULL)
+
+#define _ecs_add_overload(_1,_2,_3,NAME,...) NAME
+#define ecs_add(...) _ecs_add_overload(__VA_ARGS__, _ecs_add3, _ecs_add2)(__VA_ARGS__)
+
 void ecs_event(struct ECS *self, enum ECSEvent event);
 struct Entity ecs_new(struct ECS *self);
 void ecs_delete(struct ECS *self, struct Entity entity);
-void ecs_add(struct Entity entity, enum ECSComponent component);
 void ecs_remove(struct Entity entity, enum ECSComponent component);
 bool ecs_has(struct Entity entity, enum ECSComponent component);
 void *ecs_get(struct Entity entity, enum ECSComponent component);
 void ecs_init(struct ECS *self, struct World *world);
+void ecs_destroy(struct ECS *self);
 
 #endif

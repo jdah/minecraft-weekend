@@ -119,8 +119,7 @@ static int depth_cmp(const struct Face *a, const struct Face *b) {
 }
 
 static void chunkmesh_sort(struct ChunkMesh *self, enum SortKind kind) {
-    // TODO: there should be a better way of getting the center
-    vec3s center = self->chunk->world->player.camera.position;
+    vec3s center = ((struct PositionComponent *) ecs_get(self->chunk->world->entity_view, C_POSITION))->position;
 
     struct ChunkMeshBuffer
         *faces = &self->buffers[FACES],

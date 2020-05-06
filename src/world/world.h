@@ -53,15 +53,21 @@ struct Heightmap {
 #define HEIGHTMAP_SET(h, p, y) ((h)->data[HEIGHTMAP_INDEX(p)] = y)
 
 struct World {
-    struct Sky sky;
-    struct EntityPlayer player;
-
     // entity component system
     struct ECS ecs;
+
+    // the entity around which the world is viewed and the entity around which
+    // the world is loaded
+    // both must have a position component; entity_view must have a camera component
+    struct Entity entity_view, entity_load;
+
+    // sky state
+    struct Sky sky;
 
     // tick counter
     u64 ticks;
 
+    // random world seed
     u64 seed;
 
     // Size of one dimension of World::chunks

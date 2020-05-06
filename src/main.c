@@ -6,7 +6,6 @@
 
 // TODO: remove these
 #include "world/light.h"
-#include "entity/position.h"
 
 // global state
 struct State state;
@@ -18,7 +17,24 @@ void init() {
     world_init(&state.world);
     mouse_set_grabbed(true);
 
-    state.world.player.camera.position = (vec3s) {{ 0, 80, 0 }};
+    struct Entity player = ecs_new(&state.world.ecs);
+    ecs_add(player, C_POSITION);
+    ecs_add(player, C_CAMERA);
+    ecs_add(player, C_CONTROL);
+    ecs_add(player, C_PHYSICS, ((struct PhysicsComponent) {
+        .flags = {
+            .gravity = true
+        }
+    }));
+
+    struct ControlComponent *c_control = ecs_get(player, C_CONTROL);
+    c_control->mouse_sensitivity = 3.0f;
+
+    struct PositionComponent *c_position = ecs_get(player, C_POSITION);
+    c_position->position = (vec3s) {{ 0, 80, 0}};
+
+    state.world.entity_load = player;
+    state.world.entity_view = player;
 }
 
 void destroy() {
@@ -29,7 +45,6 @@ void destroy() {
 void tick() {
     state.ticks++;
     world_tick(&state.world);
-    world_set_center(&state.world, world_pos_to_block(state.world.player.camera.position));
 
     // time warp
     if (state.window->keyboard.keys[GLFW_KEY_L].down) {
@@ -42,16 +57,16 @@ void tick() {
 
     static ivec3s last_light;
 
-    if (state.window->keyboard.keys[GLFW_KEY_C].pressed_tick) {
-        last_light = world_pos_to_block(state.world.player.camera.position);
-        srand(NOW());
-        u8 r = rand() % 16, g = rand() % 16, b = rand() % 16;
-        torchlight_add(&state.world, last_light, (r << 12) | (g << 8) | (b << 4) | 0xF);
-    }
+    // if (state.window->keyboard.keys[GLFW_KEY_C].pressed_tick) {
+    //     last_light = world_pos_to_block(state.world.player.camera.position);
+    //     srand(NOW());
+    //     u8 r = rand() % 16, g = rand() % 16, b = rand() % 16;
+    //     torchlight_add(&state.world, last_light, (r << 12) | (g << 8) | (b << 4) | 0xF);
+    // }
 
-    if (state.window->keyboard.keys[GLFW_KEY_V].pressed_tick) {
-        torchlight_remove(&state.world, last_light);
-    }
+    // if (state.window->keyboard.keys[GLFW_KEY_V].pressed_tick) {
+    //     torchlight_remove(&state.world, last_light);
+    // }
 
 
     // ivec3s p = world_pos_to_block(state.world.player.camera.position);

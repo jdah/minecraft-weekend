@@ -241,7 +241,6 @@ void world_init(struct World *self) {
     self->unloaded_data.capacity = 64;
     self->unloaded_data.list = malloc(self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
 
-    player_init(&self->player, self);
     self->chunks_size = 10;
     self->chunks = calloc(1, NUM_CHUNKS(self) * sizeof(struct Chunk *));
     self->heightmaps = calloc(1, NUM_HEIGHTMAPS(self) * sizeof(struct Heightmap *));
@@ -250,8 +249,11 @@ void world_init(struct World *self) {
 }
 
 void world_destroy(struct World *self) {
+    // destroy remaining entitites
+    ecs_event(&self->ecs, ECS_DESTROY);
+    ecs_destroy(&self->ecs);
+
     sky_destroy(&self->sky);
-    player_destroy(&self->player);
 
     world_foreach(self, chunk) {
         if (chunk != NULL) {
@@ -372,6 +374,10 @@ void world_set_center(struct World *self, ivec3s center_pos) {
 }
 
 void world_render(struct World *self) {
+    // copy camera settings from view entity
+    struct CameraComponent *c_camera = ecs_get(self->entity_view, C_CAMERA);
+    memcpy(&state.renderer.perspective_camera, &c_camera->camera, sizeof(struct CameraComponent));
+
     // configure sky
     self->sky.fog_near = (self->chunks_size / 2) * 32 - 12;
     self->sky.fog_far = (self->chunks_size / 2) * 32 - 4;
@@ -412,8 +418,8 @@ void world_render(struct World *self) {
         }
     }
 
-    player_render(&self->player);
     renderer_pop_camera(&state.renderer);
+    ecs_event(&self->ecs, ECS_RENDER);    
 }
 
 void world_update(struct World *self) {
@@ -429,17 +435,19 @@ void world_update(struct World *self) {
         }
     }
     
-    player_update(&self->player);
+    ecs_event(&self->ecs, ECS_UPDATE);
 }
 
 void world_tick(struct World *self) {
     self->ticks++;
+
+    world_set_center(self, ((struct PositionComponent *) ecs_get(self->entity_view, C_POSITION))->block);
 
     world_foreach(self, chunk) {
         if (chunk != NULL) {
             chunk_tick(chunk);
         }
     }
- 
-    player_tick(&self->player);
+
+    ecs_event(&self->ecs, ECS_TICK);
 }

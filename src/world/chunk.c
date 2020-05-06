@@ -130,12 +130,12 @@ void chunk_update(struct Chunk *self) {
     // Depth sort the transparent mesh if
     // (1) the player is inside of this chunk and their block position changed
     // (2) the player has moved chunks AND this chunk is close
-    struct EntityPlayer *player = &self->world->player;
-    bool within_distance = glms_ivec3_norm(glms_ivec3_sub(self->offset, player->offset)) < 4;
+    struct PositionComponent *c_position = ecs_get(self->world->entity_view, C_POSITION);
+    bool within_distance = glms_ivec3_norm(glms_ivec3_sub(self->offset, c_position->offset)) < 4;
 
     self->mesh->flags.depth_sort =
-        (!ivec3scmp(self->offset, player->offset) && player->block_pos_changed) ||
-        (player->offset_changed && within_distance);
+        (!ivec3scmp(self->offset, c_position->offset) && c_position->block_changed) ||
+        (c_position->offset_changed && within_distance);
 
     // Persist depth sort data if the player is within depth sort distance of this chunk
     chunkmesh_set_persist(self->mesh, within_distance);

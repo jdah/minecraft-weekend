@@ -115,7 +115,7 @@ void ecs_delete(struct ECS *self, struct Entity entity) {
         if (destroy != NULL) {
             destroy(component, entity);
         }
-    } 
+    }
 
     // mark this entity's index as unused
     bitmap_clr(self->used, entity.index);
@@ -124,7 +124,7 @@ void ecs_delete(struct ECS *self, struct Entity entity) {
     self->ids[entity.index] = ENTITY_NONE;
 }
 
-void ecs_add(struct Entity entity, enum ECSComponent component_id) {
+void _ecs_add_internal(struct Entity entity, enum ECSComponent component_id, void *value) {
     struct ComponentList *list = &entity.ecs->lists[component_id];
     ECSSubscriber init = list->system.init;
     void *component = ECSCL_GET(list, entity.index);
@@ -132,6 +132,10 @@ void ecs_add(struct Entity entity, enum ECSComponent component_id) {
     // mark the component as used
     assert(!(ECS_TAG(component) & ECS_TAG_USED));
     *ECS_PTAG(component) |= ECS_TAG_USED;
+
+    if (value != NULL) {
+        memcpy(component, value, list->component_size);
+    }
 
     // run the initializer if it is not null
     if (init != NULL) {
@@ -163,8 +167,6 @@ void *ecs_get(struct Entity entity, enum ECSComponent component) {
     return ECSCL_GET(&entity.ecs->lists[component], entity.index);
 }
 
-extern void position_init(struct ECS *);
-
 void ecs_init(struct ECS *self, struct World *world) {
     self->capacity = 64;
     self->ids = calloc(self->capacity, sizeof(EntityId));
@@ -172,5 +174,15 @@ void ecs_init(struct ECS *self, struct World *world) {
     self->next_entity_id = 1;
     self->world = world;
 
-    position_init(self);
+    // defined in ecs.h
+    _ecs_init_internal(self);
+}
+
+void ecs_destroy(struct ECS *self) {
+    free(self->used);
+    free(self->ids);
+
+    for (size_t i = 0; i <= ECSCOMPONENT_LAST; i++) {
+        free(self->lists[i].components);
+    }
 }
