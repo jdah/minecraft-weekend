@@ -38,6 +38,6 @@ void ortho_camera_init(struct OrthoCamera *self, vec2s min, vec2s max) {
 
 void ortho_camera_update(struct OrthoCamera *self) {
     self->view_proj.view = glms_mat4_identity();
-    self->view_proj.view = glms_translate(self->view_proj.view, (vec3s) {{ -self->position.x, -self->position.y, 0 }});
-    self->view_proj.proj = glms_ortho(self->min.x, self->max.x, self->min.y, self->max.y, -10.0f, 10.0f);
+    // self->view_proj.view = glms_translate(self->view_proj.view, (vec3s) {{ -self->position.x, -self->position.y, 0 }});
+    self->view_proj.proj = glms_ortho(self->min.x, self->max.x, self->min.y, self->max.y, -100.0f, 100.0f);
 }

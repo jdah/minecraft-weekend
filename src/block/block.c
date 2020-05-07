@@ -14,6 +14,12 @@ static Torchlight get_torchlight(struct World *world, ivec3s pos) {
     return 0x0000;
 }
 
+
+static void get_aabb(struct World *world, ivec3s pos, AABB dest) {
+    dest[0] = IVEC3S2V(pos);
+    dest[1] = (vec3s) {{ pos.x + 1.0f, pos.y + 1.0f, pos.z + 1.0f }};
+}
+
 // Contains all default behavior for a block
 struct Block BLOCK_DEFAULT = {
     .id = -1,
@@ -21,48 +27,13 @@ struct Block BLOCK_DEFAULT = {
     .liquid = false,
     .can_emit_light = false,
     .animated = false,
+    .solid = true,
+    .gravity_modifier = 1.0f,
+    .drag = 1.0f,
+    .sliperiness = 1.0f,
     .mesh_type = BLOCKMESH_DEFAULT,
     .get_texture_location = get_texture_location,
     .get_animation_frames = get_animation_frames,
-    .get_torchlight = get_torchlight
+    .get_torchlight = get_torchlight,
+    .get_aabb = get_aabb
 };
-
-extern void air_init();
-extern void grass_init();
-extern void dirt_init();
-extern void stone_init();
-extern void sand_init(); 
-extern void water_init();
-extern void glass_init();
-extern void log_init();
-extern void leaves_init();
-extern void rose_init();
-extern void buttercup_init();
-extern void coal_init();
-extern void copper_init();
-extern void lava_init();
-extern void clay_init();
-extern void gravel_init();
-extern void planks_init();
-extern void torch_init();
-
-void block_init() {
-    air_init();
-    grass_init();
-    dirt_init();
-    stone_init();
-    sand_init();
-    water_init();
-    glass_init();
-    log_init();
-    leaves_init();
-    rose_init();
-    buttercup_init();
-    coal_init();
-    copper_init();
-    lava_init();
-    clay_init();
-    gravel_init();
-    planks_init();
-    torch_init();
-}

@@ -5,6 +5,7 @@
 #include "../util/camera.h"
 
 struct CameraComponent {
+    vec3s offset;
     struct PerspectiveCamera camera;
 };
 

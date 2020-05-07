@@ -15,15 +15,33 @@ void init() {
     state.window = &window;
     renderer_init(&state.renderer);
     world_init(&state.world);
+    ui_init(&state.ui);
     mouse_set_grabbed(true);
 
     struct Entity player = ecs_new(&state.world.ecs);
     ecs_add(player, C_POSITION);
-    ecs_add(player, C_CAMERA);
-    ecs_add(player, C_CONTROL);
     ecs_add(player, C_PHYSICS, ((struct PhysicsComponent) {
+        .size = {
+            (vec3s) {{ 0, 0, 0 }},
+            (vec3s) {{ 0.2f, 1.6f, 0.2f }}
+        },
         .flags = {
-            .gravity = true
+            .gravity = true,
+            .collide = true
+        }
+    }));
+    ecs_add(player, C_MOVEMENT, ((struct MovementComponent) {
+        .speed = 1.0f,
+        .jump_height = 1.0f
+    }));
+    ecs_add(player, C_CAMERA, ((struct CameraComponent) {
+        .offset = (vec3s) {{ 0.0f, 0.8f, 0.0f }}
+    }));
+    ecs_add(player, C_CONTROL);
+    ecs_add(player, C_BLOCKLOOK, ((struct BlockLookComponent) {
+        .radius = 5.0f,
+        .flags = {
+            .render = true
         }
     }));
 
@@ -31,7 +49,7 @@ void init() {
     c_control->mouse_sensitivity = 3.0f;
 
     struct PositionComponent *c_position = ecs_get(player, C_POSITION);
-    c_position->position = (vec3s) {{ 0, 80, 0}};
+    c_position->position = (vec3s) {{ 0, 80, 0 }};
 
     state.world.entity_load = player;
     state.world.entity_view = player;
@@ -45,6 +63,7 @@ void destroy() {
 void tick() {
     state.ticks++;
     world_tick(&state.world);
+    ui_tick(&state.ui);
 
     // time warp
     if (state.window->keyboard.keys[GLFW_KEY_L].down) {
@@ -54,28 +73,12 @@ void tick() {
     if (state.window->keyboard.keys[GLFW_KEY_P].pressed_tick) {
         state.world.ticks += (TOTAL_DAY_TICKS) / 3;
     }
-
-    static ivec3s last_light;
-
-    // if (state.window->keyboard.keys[GLFW_KEY_C].pressed_tick) {
-    //     last_light = world_pos_to_block(state.world.player.camera.position);
-    //     srand(NOW());
-    //     u8 r = rand() % 16, g = rand() % 16, b = rand() % 16;
-    //     torchlight_add(&state.world, last_light, (r << 12) | (g << 8) | (b << 4) | 0xF);
-    // }
-
-    // if (state.window->keyboard.keys[GLFW_KEY_V].pressed_tick) {
-    //     torchlight_remove(&state.world, last_light);
-    // }
-
-
-    // ivec3s p = world_pos_to_block(state.world.player.camera.position);
-    // printf("%d\n", world_heightmap_get(&state.world, (ivec2s) {{ p.x, p.z }}));
 }
 
 void update() {
     renderer_update(&state.renderer);
     world_update(&state.world);
+    ui_update(&state.ui);
 
     // wireframe toggle (T)
     if (state.window->keyboard.keys[GLFW_KEY_T].pressed) {
@@ -91,11 +94,7 @@ void render() {
     renderer_push_camera(&state.renderer);
     {
         renderer_set_camera(&state.renderer, CAMERA_ORTHO);
-        renderer_immediate_quad(
-            &state.renderer, state.renderer.textures[TEXTURE_CROSSHAIR],
-            (vec3s) {{ (state.window->size.x / 2) - 8, (state.window->size.y / 2) - 8 }},
-            (vec3s) {{ 16, 16 }}, (vec4s) {{ 1.0, 1.0, 1.0, 0.4}},
-            (vec2s) {{ 0, 0 }}, (vec2s) {{ 1, 1 }});
+        ui_render(&state.ui);
     }
     renderer_pop_camera(&state.renderer);
 }

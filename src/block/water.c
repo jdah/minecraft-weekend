@@ -16,6 +16,9 @@ void water_init() {
     water.transparent = true;
     water.animated = true;
     water.liquid = true;
+    water.solid = false;
+    water.gravity_modifier = 0.72f;
+    water.drag = 10.0f;
     water.mesh_type = BLOCKMESH_LIQUID;
     water.get_texture_location = get_texture_location;
     water.get_animation_frames = get_animation_frames;

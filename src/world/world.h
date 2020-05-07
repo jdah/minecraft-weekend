@@ -115,6 +115,8 @@ void world_render(struct World *self);
 void world_update(struct World *self);
 void world_tick(struct World *self);
 
+size_t world_get_aabbs(struct World *self, AABB area, AABB *aabbs, size_t n);
+
 // block position -> chunk offset
 static inline ivec3s world_pos_to_offset(ivec3s pos) {
     return (ivec3s){{(s32)floorf(pos.x / CHUNK_SIZE_F.x),

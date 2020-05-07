@@ -376,7 +376,7 @@ void world_set_center(struct World *self, ivec3s center_pos) {
 void world_render(struct World *self) {
     // copy camera settings from view entity
     struct CameraComponent *c_camera = ecs_get(self->entity_view, C_CAMERA);
-    memcpy(&state.renderer.perspective_camera, &c_camera->camera, sizeof(struct CameraComponent));
+    memcpy(&state.renderer.perspective_camera, &c_camera->camera, sizeof(struct PerspectiveCamera));
 
     // configure sky
     self->sky.fog_near = (self->chunks_size / 2) * 32 - 12;
@@ -418,8 +418,8 @@ void world_render(struct World *self) {
         }
     }
 
+    ecs_event(&self->ecs, ECS_RENDER);
     renderer_pop_camera(&state.renderer);
-    ecs_event(&self->ecs, ECS_RENDER);    
 }
 
 void world_update(struct World *self) {
@@ -450,4 +450,32 @@ void world_tick(struct World *self) {
     }
 
     ecs_event(&self->ecs, ECS_TICK);
+}
+
+// returns all AABBs within the specified area
+size_t world_get_aabbs(struct World *self, AABB area, AABB *aabbs, size_t n) {
+    ivec3s b_min = world_pos_to_block(area[0]),
+        b_max = glms_ivec3_add(world_pos_to_block(area[1]), GLMS_IVEC3_ONE);
+
+    size_t i = 0;
+    for (s64 x = b_min.x; x <= b_max.x; x++) {
+        for (s64 z = b_min.z; z <= b_max.z; z++) {
+            for (s64 y = b_min.y; y <= b_max.y; y++) {
+                ivec3s pos = (ivec3s) {{ x, y, z }};
+                struct Block block = BLOCKS[world_get_block(self, pos)];
+                
+                if (block.solid) {
+                    block.get_aabb(self, pos, aabbs[i++]);
+
+                    if (i == n) {
+                        // TODO: real warning here?
+                        printf("%s", "WARNING: AABB buffer filled\n");
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return i;
 }

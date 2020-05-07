@@ -8,21 +8,27 @@
 #include "vao.h"
 #include "vbo.h"
 
-#define SHADERS_LAST SHADER_BASIC_2D
+enum FillMode {
+    FILL_MODE_FILL, FILL_MODE_LINE
+};
+
+#define SHADERS_LAST SHADER_BASIC_COLOR
 enum ShaderType {
     SHADER_NONE = 0,
     SHADER_CHUNK,
     SHADER_SKY,
-    SHADER_BASIC_2D
+    SHADER_BASIC_TEXTURE,
+    SHADER_BASIC_COLOR
 };
 
-#define TEXTURE_LAST TEXTURE_MOON
+#define TEXTURE_LAST TEXTURE_HOTBAR
 enum Textures {
     TEXTURE_CROSSHAIR,
     TEXTURE_CLOUDS,
     TEXTURE_STAR,
     TEXTURE_SUN,
-    TEXTURE_MOON
+    TEXTURE_MOON,
+    TEXTURE_HOTBAR
 };
 
 #define CAMERA_STACK_MAX 256
@@ -44,6 +50,7 @@ struct Renderer {
 
     struct Shader shaders[SHADERS_LAST + 1];
     enum ShaderType current_shader;
+    struct Shader shader;
 
     struct Texture textures[TEXTURE_LAST + 1];
 
@@ -68,8 +75,19 @@ void renderer_push_camera(struct Renderer *self);
 void renderer_pop_camera(struct Renderer *self);
 void renderer_set_view_proj(struct Renderer *self);
 void renderer_use_shader(struct Renderer *self, enum ShaderType shader);
-void renderer_immediate_quad(
-    struct Renderer *self, struct Texture texture, vec3s position, vec3s size,
-    vec4s color, vec2s uv_min, vec2s uv_max);
+
+void renderer_quad_color(
+    struct Renderer *self, vec2s size,
+    vec4s color, mat4s model);
+
+void renderer_quad_texture(
+    struct Renderer *self, struct Texture texture,
+    vec2s size, vec4s color,
+    vec2s uv_min, vec2s uv_max,
+    mat4s model);
+
+void renderer_aabb(
+    struct Renderer *self, AABB aabb, vec4s color,
+    mat4s model, enum FillMode fill_mode);
 
 #endif

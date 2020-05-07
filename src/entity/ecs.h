@@ -8,26 +8,16 @@ struct World;
 
 #define ecs_register(_id, _C, _ecs, _system) _ecs_register_internal((_id), sizeof(_C), (_ecs), (_system))
 
-#define ENTITY_NONE 0
-
-typedef u64 EntityId;
 typedef u64 ECSTag;
 
-// Gets the ID of the specified component type
-#define ECS_ID(T) HASH_S256(#T)
-
-#include "components.h"
+#include "ecscomponents.h"
+#include "ecstypes.h"
 
 #define ECSEVENT_LAST ECS_TICK
 enum ECSEvent {
     ECS_INIT = 0, ECS_DESTROY, ECS_RENDER, ECS_UPDATE, ECS_TICK
 };
 
-struct Entity {
-    EntityId id;
-    u64 index;
-    struct ECS *ecs;
-};
 
 typedef void (*ECSSubscriber)(void *, struct Entity);
 

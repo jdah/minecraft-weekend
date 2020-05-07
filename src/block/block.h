@@ -51,9 +51,22 @@ struct Block {
     // the mesh type of this block, see blockmesh.h
     enum BlockMeshType mesh_type;
 
+    // if true, then this block's aabb is determined by get_aabb
+    bool solid;
+
+    // gravity modifier for non-solid blocks
+    f32 gravity_modifier;
+
+    // drag for non-solid blocks
+    f32 drag;
+
+    // sliperiness for solid blocks
+    f32 sliperiness;
+
     ivec2s (*get_texture_location)(struct World *world, ivec3s pos, enum Direction d);
     void (*get_animation_frames)(ivec2s out[BLOCK_ATLAS_FRAMES]);
     Torchlight (*get_torchlight)(struct World *world, ivec3s pos);
+    void (*get_aabb)(struct World *world, ivec3s pos, AABB dest);
 };
 
 #define MAX_BLOCK_ID INT16_MAX
@@ -61,6 +74,29 @@ struct Block {
 struct Block BLOCK_DEFAULT;
 struct Block BLOCKS[MAX_BLOCK_ID];
 
-void block_init();
+#define _BLOCK_DECL(_name)\
+    extern void _name##_init();\
+    _name##_init();
+
+static inline void block_init() {
+    _BLOCK_DECL(air);
+    _BLOCK_DECL(grass);
+    _BLOCK_DECL(dirt);
+    _BLOCK_DECL(stone);
+    _BLOCK_DECL(sand);
+    _BLOCK_DECL(water);
+    _BLOCK_DECL(glass);
+    _BLOCK_DECL(log);
+    _BLOCK_DECL(leaves);
+    _BLOCK_DECL(rose);
+    _BLOCK_DECL(buttercup);
+    _BLOCK_DECL(coal);
+    _BLOCK_DECL(copper);
+    _BLOCK_DECL(lava);
+    _BLOCK_DECL(clay);
+    _BLOCK_DECL(gravel);
+    _BLOCK_DECL(planks);
+    _BLOCK_DECL(torch);
+}
 
 #endif

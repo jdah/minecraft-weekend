@@ -61,6 +61,6 @@ struct Ray {
     vec3s origin, direction;
 };
 
-extern bool ray_block(struct Ray ray, f32 max_distance, bool (*f)(ivec3s), ivec3s *out, enum Direction *d_out);
+extern bool ray_block(struct Ray ray, f32 max_distance, void *arg, bool (*f)(void *, ivec3s), ivec3s *out, enum Direction *d_out);
 
 #endif

@@ -28,7 +28,7 @@ static vec3s intbound(vec3s s, vec3s ds) {
 }
 
 // Check if a ray intersects a "block" where blocks are retrieved via a function
-bool ray_block(struct Ray ray, f32 max_distance, bool (*f)(ivec3s), ivec3s *out, enum Direction *d_out) {
+bool ray_block(struct Ray ray, f32 max_distance, void *arg, bool (*f)(void *, ivec3s), ivec3s *out, enum Direction *d_out) {
     ivec3s p, step;
     vec3s d, tmax, tdelta;
     f32 radius;
@@ -41,7 +41,7 @@ bool ray_block(struct Ray ray, f32 max_distance, bool (*f)(ivec3s), ivec3s *out,
     radius = max_distance / glms_vec3_norm(d);
 
     while (true) {
-        if (f(p)) {
+        if (f(arg, p)) {
             *out = p;
             return true;
         }

@@ -25,6 +25,7 @@
 #include "ivec2s.h"
 #include "ivec3.h"
 #include "ivec3s.h"
+#include "aabb.h"
 
 #include "fmath.h"
 #include "time.h"

@@ -27,7 +27,7 @@ const vec4s SUNLIGHT_COLORS[2] = {
 // cloud colors corresponding to [DAY or NIGHT]
 const vec4s CLOUD_COLORS[2] = {
     RGBAX2F(0xFFFFFFFF),
-    RGBAX2F(0x111111FF)
+    RGBAX2F(0x040404FF)
 };
 
 void sky_init(struct Sky *self, struct World *world) {
