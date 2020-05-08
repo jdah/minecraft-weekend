@@ -8,6 +8,7 @@ void buttercup_init() {
     struct Block buttercup = BLOCK_DEFAULT;
     buttercup.id = BUTTERCUP;
     buttercup.transparent = true;
+    buttercup.solid = false;
     buttercup.mesh_type = BLOCKMESH_SPRITE;
     buttercup.get_texture_location = get_texture_location;
     BLOCKS[BUTTERCUP] = buttercup;

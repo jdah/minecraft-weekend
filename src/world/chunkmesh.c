@@ -196,6 +196,7 @@ static void chunkmesh_sort(struct ChunkMesh *self, enum SortKind kind) {
 
 static void chunkmesh_mesh(struct ChunkMesh *self) {
     struct Chunk *chunk = self->chunk;
+    struct BlockAtlas *block_atlas = &state.renderer.block_atlas;
 
     chunkmesh_prepare(self);
 
@@ -212,15 +213,18 @@ static void chunkmesh_mesh(struct ChunkMesh *self) {
             
             switch (params.block->mesh_type) {
                 case BLOCKMESH_SPRITE:
-                case BLOCKMESH_TORCH:
                     atlas_get(
-                        state.renderer.block_atlas.atlas,
+                        block_atlas->atlas,
                         params.block->get_texture_location(chunk->world, pos_w, 0),
                         &params.uv_min, &params.uv_max);
                     blockmesh_sprite(self, params);
                     break;
+                case BLOCKMESH_CUSTOM:
                 case BLOCKMESH_DEFAULT:
                 case BLOCKMESH_LIQUID:
+                    params.offset = (vec3s) {{ 0, 0, 0 }};
+                    params.size = (vec3s) {{ 1, 1, 1 }};
+
                     for (enum Direction d = 0; d < 6; d++) {
                         ivec3s d_v = DIR2IVEC3S(d);
                         ivec3s n = glms_ivec3_add(pos, d_v);
@@ -228,13 +232,39 @@ static void chunkmesh_mesh(struct ChunkMesh *self) {
                         params.data_n = CHUNK_WORLD_GET_DATA(chunk, n);
                         params.block_n = &BLOCKS[chunk_data_to_block(params.data_n)];
 
-                        if ((params.block_n->transparent && !params.block->transparent) ||
-                            (params.block->transparent && params.block_n->id != params.block->id)) {
+                        if (params.block->mesh_type == BLOCKMESH_CUSTOM ||
+                            (params.block_n->transparent && !params.block->transparent) ||
+                            (params.block->transparent &&
+                                params.block_n->transparent &&
+                                params.block_n->id != params.block->id)) {
                             params.direction = d;
+
+                            // get base UV coordinates
                             atlas_get(
-                                state.renderer.block_atlas.atlas,
+                                block_atlas->atlas,
                                 params.block->get_texture_location(chunk->world, pos_w, d),
                                 &params.uv_min, &params.uv_max);
+
+                            // get custom mesh parameters for this face
+                            if (params.block->mesh_type == BLOCKMESH_CUSTOM) {
+                                ivec2s uv_offset_px, uv_size_px;
+                                params.block->get_mesh_information(
+                                    chunk->world, pos, params.direction,
+                                    &params.offset, &params.size,
+                                    &uv_offset_px, &uv_size_px);
+
+                                // offset UV coordinates
+                                vec2s uv_offset = glms_vec2_mul(
+                                    IVEC2S2V(uv_offset_px),
+                                    block_atlas->atlas.pixel_unit),
+                                    uv_size = glms_vec2_mul(
+                                    IVEC2S2V(uv_size_px),
+                                    block_atlas->atlas.pixel_unit);
+
+                                params.uv_min = glms_vec2_add(params.uv_min, uv_offset);
+                                params.uv_max = glms_vec2_add(params.uv_min, uv_size);
+                            }
+
                             blockmesh_face(self, params);
                         }
                     }

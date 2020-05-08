@@ -211,11 +211,11 @@ void world_load_chunk(struct World *self, ivec3s offset) {
     worldgen_generate(chunk);
 
     // set blocks which were previously unloaded
-    for (size_t i = 0; i < self->unloaded_data.size; i++) {
-        struct WorldUnloadedData data = self->unloaded_data.list[i];
+    for (size_t i = 0; i < self->unloaded_blocks.size; i++) {
+        struct WorldUnloadedBlock data = self->unloaded_blocks.list[i];
         if (!ivec3scmp(chunk->offset, world_pos_to_offset(data.pos))) {
-            chunk_set_block(chunk, world_pos_to_chunk_pos(data.pos), data.data);
-            world_remove_unloaded_data(self, i);
+            chunk_set_block(chunk, world_pos_to_chunk_pos(data.pos), data.block);
+            world_remove_unloaded_block(self, i);
         }
     }
 
@@ -238,8 +238,8 @@ void world_init(struct World *self) {
     self->throttles.load.max = 1;
     self->throttles.mesh.max = 8;
 
-    self->unloaded_data.capacity = 64;
-    self->unloaded_data.list = malloc(self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
+    self->unloaded_blocks.capacity = 64;
+    self->unloaded_blocks.list = malloc(self->unloaded_blocks.capacity * sizeof(struct WorldUnloadedBlock));
 
     self->chunks_size = 10;
     self->chunks = calloc(1, NUM_CHUNKS(self) * sizeof(struct Chunk *));
@@ -266,29 +266,29 @@ void world_destroy(struct World *self) {
     free(self->heightmaps);
 }
 
-void world_append_unloaded_data(struct World *self, ivec3s pos, u32 data) {
-    if (self->unloaded_data.size + 1 == self->unloaded_data.capacity) {
-        self->unloaded_data.capacity *= 2;
-        self->unloaded_data.list = realloc(
-            self->unloaded_data.list,
-            self->unloaded_data.capacity * sizeof(struct WorldUnloadedData));
+void world_append_unloaded_block(struct World *self, ivec3s pos, enum BlockId block) {
+    if (self->unloaded_blocks.size + 1 == self->unloaded_blocks.capacity) {
+        self->unloaded_blocks.capacity *= 2;
+        self->unloaded_blocks.list = realloc(
+            self->unloaded_blocks.list,
+            self->unloaded_blocks.capacity * sizeof(struct WorldUnloadedBlock));
     }
 
-    self->unloaded_data.list[self->unloaded_data.size++] = (struct WorldUnloadedData) {
+    self->unloaded_blocks.list[self->unloaded_blocks.size++] = (struct WorldUnloadedBlock) {
         .pos = pos,
-        .data = data
+        .block = block
     };
 }
 
-void world_remove_unloaded_data(struct World *self, size_t i) {
-    assert(i >= 0 && i < self->unloaded_data.size);
-    self->unloaded_data.size--;
+void world_remove_unloaded_block(struct World *self, size_t i) {
+    assert(i >= 0 && i < self->unloaded_blocks.size);
+    self->unloaded_blocks.size--;
 
-    if (i != self->unloaded_data.size) {
+    if (i != self->unloaded_blocks.size) {
         memmove(
-            self->unloaded_data.list + (i + 0),
-            self->unloaded_data.list + (i + 1),
-            (self->unloaded_data.size - i) * sizeof(struct WorldUnloadedData));
+            self->unloaded_blocks.list + (i + 0),
+            self->unloaded_blocks.list + (i + 1),
+            (self->unloaded_blocks.size - i) * sizeof(struct WorldUnloadedBlock));
     }
 }
 
@@ -412,11 +412,13 @@ void world_render(struct World *self) {
     }
 
     // render transparent geometry back to front
+    glDisable(GL_CULL_FACE);
     world_foreach_btf(self, c2) {
         if (c2 != NULL) {
             chunk_render(c2, TRANSPARENT);
         }
     }
+    glEnable(GL_CULL_FACE);
 
     ecs_event(&self->ecs, ECS_RENDER);
     renderer_pop_camera(&state.renderer);

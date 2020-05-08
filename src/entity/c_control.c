@@ -18,6 +18,7 @@ static void update(struct ControlComponent *c_control, struct Entity entity) {
 static void tick(struct ControlComponent *c_control, struct Entity entity) {
     struct MovementComponent *c_movement = ecs_get(entity, C_MOVEMENT);
     struct BlockLookComponent *c_blocklook = ecs_get(entity, C_BLOCKLOOK);
+    struct PhysicsComponent *c_physics = ecs_get(entity, C_PHYSICS);
     
     c_movement->directions.forward = state.window->keyboard.keys[GLFW_KEY_W].down;
     c_movement->directions.backward = state.window->keyboard.keys[GLFW_KEY_S].down;
@@ -36,12 +37,29 @@ static void tick(struct ControlComponent *c_control, struct Entity entity) {
         world_set_block(entity.ecs->world, c_blocklook->pos, AIR);
     }
 
+    struct Block held_block = BLOCKS[state.ui.hotbar.values[state.ui.hotbar.index]];
+
     if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_RIGHT].pressed_tick
         && c_blocklook->hit) {
-        world_set_block(
-            entity.ecs->world,
-            glms_ivec3_add(c_blocklook->pos, DIR2IVEC3S(c_blocklook->face)),
-            state.ui.hotbar.values[state.ui.hotbar.index]);
+
+        // only allow the block to be placed if it wouldn't collide with this player's AABB
+        ivec3s pos_place = glms_ivec3_add(c_blocklook->pos, DIR2IVEC3S(c_blocklook->face));
+        AABB aabb_place;
+        held_block.get_aabb(entity.ecs->world, pos_place, aabb_place);
+
+        if (!physics_collides(c_physics, aabb_place)) {
+            world_set_block(entity.ecs->world, pos_place, held_block.id);
+        }
+    }
+
+    struct LightComponent *c_light = ecs_get(entity, C_LIGHT);
+    if (held_block.can_emit_light) {
+        struct PositionComponent *c_position = ecs_get(entity, C_POSITION);
+
+        c_light->flags.enabled = true;
+        c_light->light = held_block.get_torchlight(entity.ecs->world, c_position->block);
+    } else {
+        c_light->flags.enabled = false;
     }
 }
 

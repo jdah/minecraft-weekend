@@ -81,8 +81,13 @@ static void _set(struct Chunk *chunk, s32 x, s32 y, s32 z, u32 d) {
     ivec3s p = (ivec3s){{x, y, z}};
     if (chunk_in_bounds(p)) {
         chunk_set_block(chunk, p, d);
+    }
+    
+    ivec3s p_w = glms_ivec3_add(chunk->position, p);
+    if (!world_contains(chunk->world, p_w)) {
+        world_append_unloaded_block(chunk->world, p_w, d);
     } else {
-        world_set_block(chunk->world, glms_ivec3_add(chunk->position, p), d);
+        world_set_block(chunk->world, p_w, d);
     }
 }
 
@@ -141,8 +146,10 @@ void flowers(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
 
     for (s32 xx = (x - l); xx <= (x + l); xx++) {
         for (s32 zz = (z - h); zz <= (z + h); zz++) {
-            enum BlockId under = get(chunk, xx, y, zz);
-            if ((under == GRASS) &&
+            enum BlockId block = get(chunk, xx, y + 1, zz),
+                under = get(chunk, xx, y, zz);
+            if (block == AIR &&
+                under == GRASS &&
                 RANDCHANCE(0.5)) {
                 set(chunk, xx, y + 1, zz, flower);
             }
@@ -223,6 +230,20 @@ void lavapool(struct Chunk *chunk, FGet get, FSet set, s32 x, s32 y, s32 z) {
                 set(chunk, xx, h, zz, LAVA);
             }
         }
+    }
+}
+
+static inline void decorate_top(struct Chunk *chunk, enum Biome biome, f32 t, f32 r, s64 x, s64 h, s64 z) {
+    if (biome == PLAINS && RANDCHANCE(0.005)) {
+        tree(chunk, _get, _set, x, h, z);
+    }
+
+    if (biome == PLAINS && RANDCHANCE(0.0035)) {
+        flowers(chunk, _get, _set, x, h, z);
+    }
+
+    if (biome != OCEAN && h <= (WATER_LEVEL + 3) && t < 0.1f && RANDCHANCE(0.001)) {
+        lavapool(chunk, _get, _set, x, h, z);
     }
 }
 
@@ -345,6 +366,7 @@ void worldgen_generate(struct Chunk *chunk) {
                     continue;
                 } else if (y_w == h) {
                     block = top_block;
+                    decorate_top(chunk, biome, t, r, x, y, z);
                 } else if (y_w > (h - d)) {
                     if (top_block == GRASS) {
                         block = DIRT;

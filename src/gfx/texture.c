@@ -59,6 +59,7 @@ struct Atlas atlas_create_from_texture(struct Texture texture, ivec2s sprite_siz
     self.texture = texture;
     self.sprite_size = sprite_size;
     self.sprite_unit = glms_vec2_div(IVEC2S2V(self.sprite_size), IVEC2S2V(self.texture.size));
+    self.pixel_unit = glms_vec2_div(GLMS_VEC2_ONE, IVEC2S2V(self.texture.size));
     self.size = glms_ivec2_div(self.texture.size, self.sprite_size);
     return self;
 }
@@ -68,6 +69,7 @@ struct Atlas atlas_create(char *path, ivec2s sprite_size) {
     self.texture = texture_create_from_path(path);
     self.sprite_size = sprite_size;
     self.sprite_unit = glms_vec2_div(IVEC2S2V(self.sprite_size), IVEC2S2V(self.texture.size));
+    self.pixel_unit = glms_vec2_div(GLMS_VEC2_ONE, IVEC2S2V(self.texture.size));
     self.size = glms_ivec2_div(self.texture.size, self.sprite_size);
     return self;
 }

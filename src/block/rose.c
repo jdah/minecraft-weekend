@@ -8,6 +8,7 @@ void rose_init() {
     struct Block rose = BLOCK_DEFAULT;
     rose.id = ROSE;
     rose.transparent = true;
+    rose.solid = false;
     rose.mesh_type = BLOCKMESH_SPRITE;
     rose.get_texture_location = get_texture_location;
     BLOCKS[ROSE] = rose;

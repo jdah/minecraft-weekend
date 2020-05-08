@@ -143,6 +143,11 @@ vec3s physics_move(
     return moved;
 }
 
+// returns true if the physics component collides with the specified AABB
+bool physics_collides(struct PhysicsComponent *c_physics, AABB aabb) {
+    return glms_aabb_aabb(c_physics->aabb, aabb);
+}
+
 void c_physics_init(struct ECS *ecs) {
     ecs_register(C_PHYSICS, struct PhysicsComponent, ecs, ((union ECSSystem) {
         .init = NULL,

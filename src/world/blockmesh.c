@@ -126,21 +126,21 @@ void blockmesh_face(struct ChunkMesh *mesh, struct BlockMeshParams params) {
         faces->elements++;
     }
 
-    // TODO: only shorten if blocks other neighbors are not liquid
-    // f32 y_scale = params.block->liquid ? 0.9f : 1.0f;
-    f32 y_scale = 1.0f;
-
     // emit vertices
     for (size_t i = 0; i < 4;  i++) {
         const f32 *vertex = &CUBE_VERTICES[CUBE_INDICES[(params.direction * 6) + UNIQUE_INDICES[i]] * 3];
-        APPEND(f32, data, params.position.x + vertex[0]);
-        APPEND(f32, data, params.position.y + (y_scale * vertex[1]));
-        APPEND(f32, data, params.position.z + vertex[2]);
+        APPEND(f32, data, params.position.x + params.offset.x + (vertex[0] * params.size.x));
+        APPEND(f32, data, params.position.y + params.offset.y + (vertex[1] * params.size.y));
+        APPEND(f32, data, params.position.z + params.offset.z + (vertex[2] * params.size.z));
         APPEND(f32, data, CUBE_UVS[(i * 2) + 0] ? params.uv_max.x : params.uv_min.x);
         APPEND(f32, data, CUBE_UVS[(i * 2) + 1] ? params.uv_max.y : params.uv_min.y);
 
-        // use lighting data of this face's NEIGHBOR to light it
-        APPEND(u32, data, MAKE_LIGHT_DATA(params.direction, chunk_data_to_light(params.data_n)));
+        // use lighting data of this face's NEIGHBOR to light it if the block
+        // is not transparent. if it is transparent, use the current block's lighting
+        APPEND(u32, data,
+            MAKE_LIGHT_DATA(
+                params.direction,
+                chunk_data_to_light(params.block->transparent ? params.data : params.data_n)));
     }
 
     // emit indices

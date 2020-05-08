@@ -459,11 +459,11 @@ void worldgen_generate(struct Chunk *chunk) {
     // }
 
     // set data in this chunk which was previously unloaded
-        // for (size_t i = 0; i < self->unloaded_data.size; i++) {
-        //     struct WorldUnloadedData data = self->unloaded_data.list[i];
+        // for (size_t i = 0; i < self->unloaded_blocks.size; i++) {
+        //     struct WorldUnloadedBlock data = self->unloaded_blocks.list[i];
         //     if (!ivec3scmp(c->offset, world_pos_to_offset(data.pos))) {
         //         chunk_set_block(c, world_pos_to_chunk_pos(data.pos), data.data);
-        //         world_remove_unloaded_data(self, i);
+        //         world_remove_unloaded_blocks(self, i);
         //     }
         // }
 }

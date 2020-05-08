@@ -9,6 +9,7 @@
 // Forward declaration
 struct World;
 
+#define BLOCK_ID_LAST COBBLESTONE
 enum BlockId {
     AIR = 0,
     GRASS = 1,
@@ -27,11 +28,9 @@ enum BlockId {
     CLAY = 14,
     GRAVEL = 15,
     PLANKS = 16,
-    TORCH = 17
+    TORCH = 17,
+    COBBLESTONE = 18
 };
-
-// Always the highest valid block id
-#define BLOCK_ID_LAST TORCH
 
 struct Block {
     enum BlockId id;
@@ -64,6 +63,10 @@ struct Block {
     f32 sliperiness;
 
     ivec2s (*get_texture_location)(struct World *world, ivec3s pos, enum Direction d);
+    void (*get_mesh_information)(
+        struct World *world, ivec3s pos, enum Direction d,
+        vec3s *offset_out, vec3s *size_out,
+        ivec2s *uv_offset_out, ivec2s *uv_size_out);
     void (*get_animation_frames)(ivec2s out[BLOCK_ATLAS_FRAMES]);
     Torchlight (*get_torchlight)(struct World *world, ivec3s pos);
     void (*get_aabb)(struct World *world, ivec3s pos, AABB dest);
@@ -97,6 +100,7 @@ static inline void block_init() {
     _BLOCK_DECL(gravel);
     _BLOCK_DECL(planks);
     _BLOCK_DECL(torch);
+    _BLOCK_DECL(cobblestone);
 }
 
 #endif

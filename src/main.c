@@ -44,6 +44,7 @@ void init() {
             .render = true
         }
     }));
+    ecs_add(player, C_LIGHT);
 
     struct ControlComponent *c_control = ecs_get(player, C_CONTROL);
     c_control->mouse_sensitivity = 3.0f;

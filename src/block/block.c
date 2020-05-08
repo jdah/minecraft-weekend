@@ -20,6 +20,13 @@ static void get_aabb(struct World *world, ivec3s pos, AABB dest) {
     dest[1] = (vec3s) {{ pos.x + 1.0f, pos.y + 1.0f, pos.z + 1.0f }};
 }
 
+static void get_mesh_information(
+    struct World *world, ivec3s pos, enum Direction d,
+    vec3s *offset_out, vec3s *size_out,
+    ivec2s *uv_offset_out, ivec2s *uv_size_out) {
+    assert(false);
+}
+
 // Contains all default behavior for a block
 struct Block BLOCK_DEFAULT = {
     .id = -1,
@@ -35,5 +42,6 @@ struct Block BLOCK_DEFAULT = {
     .get_texture_location = get_texture_location,
     .get_animation_frames = get_animation_frames,
     .get_torchlight = get_torchlight,
-    .get_aabb = get_aabb
+    .get_aabb = get_aabb,
+    .get_mesh_information = get_mesh_information
 };

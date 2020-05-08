@@ -14,9 +14,9 @@
 #define NIGHT_TICKS (10 * 60 * TICKRATE)
 #define TOTAL_DAY_TICKS (DAY_TICKS + NIGHT_TICKS)
 
-struct WorldUnloadedData {
+struct WorldUnloadedBlock {
     ivec3s pos;
-    u32 data;
+    enum BlockId block;
 };
 
 struct WorldgenData {
@@ -86,9 +86,9 @@ struct World {
     // Data which has been set in the world (i.e. by the world generator)
     // but is not yet in a loaded chunk
     struct {
-        struct WorldUnloadedData *list;
+        struct WorldUnloadedBlock *list;
         size_t size, capacity;
-    } unloaded_data;
+    } unloaded_blocks;
 
     struct {
         struct {
@@ -107,9 +107,11 @@ bool world_heightmap_update(struct World *self, ivec3s p);
 void chunk_heightmap_recalculate(struct Chunk *chunk);
 void world_heightmap_recalculate(struct World *self, ivec2s p);
 
+void world_remove_unloaded_block(struct World *self, size_t i);
+void world_append_unloaded_block(struct World *self, ivec3s pos, enum BlockId block);
+
 void world_init(struct World *self);
 void world_destroy(struct World *self);
-void world_remove_unloaded_data(struct World *self, size_t i);
 void world_set_center(struct World *self, ivec3s center_pos);
 void world_render(struct World *self);
 void world_update(struct World *self);

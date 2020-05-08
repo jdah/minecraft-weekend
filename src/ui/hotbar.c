@@ -25,7 +25,8 @@ static void render_icon(vec2s offset, enum BlockId block_id) {
         &uv_min, &uv_max);
     renderer_quad_texture(
         &state.renderer, state.renderer.block_atlas.atlas.texture,
-        (vec2s) {{ 1.0f, 1.0f }}, GLMS_VEC4_ONE,
+        (vec2s) {{ 1.0f, 1.0f }},
+        (vec4s) {{ 1.0f, 1.0f, 1.0f, 1.0f }},
         uv_min, uv_max, m);
 }
 
@@ -37,14 +38,16 @@ static void render(struct UIHotbar *self) {
 
         renderer_quad_texture(
             &state.renderer, state.renderer.textures[TEXTURE_HOTBAR],
-            (vec2s) {{ SLOT_PIXELS, SLOT_PIXELS }}, GLMS_VEC4_ONE,
+            (vec2s) {{ SLOT_PIXELS, SLOT_PIXELS }},
+            (vec4s) {{ 1.0f, 1.0f, 1.0f, 1.0f }},
             (vec2s) {{ 0.0f, 0.0f }}, (vec2s) {{ 0.5f, 1.0f }},
             glms_translate_make((vec3s) {{ offset.x, offset.y, 0.0f }}));
 
         if (i == self->index) {
             renderer_quad_texture(
                 &state.renderer, state.renderer.textures[TEXTURE_HOTBAR],
-                (vec2s) {{ SLOT_PIXELS, SLOT_PIXELS }}, GLMS_VEC4_ONE,
+                (vec2s) {{ SLOT_PIXELS, SLOT_PIXELS }},
+                (vec4s) {{ 1.0f, 1.0f, 1.0f, 1.0f }},
                 (vec2s) {{ 0.5f, 0.0f }}, (vec2s) {{ 1.0f, 1.0f }},
                 glms_translate_make((vec3s) {{ offset.x, offset.y, 0.0f }}));
         }
@@ -68,12 +71,12 @@ struct UIComponent hotbar_init(struct UIHotbar *self) {
             GRASS,
             DIRT,
             STONE,
+            COBBLESTONE,
             PLANKS,
             LOG,
             GLASS,
             ROSE,
             TORCH,
-            COAL,
             SAND,
             LEAVES
         }, HOTBAR_SLOTS * sizeof(enum BlockId));

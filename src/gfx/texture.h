@@ -19,7 +19,7 @@ void texture_bind(struct Texture self);
 struct Atlas {
     struct Texture texture;
     ivec2s size, sprite_size;
-    vec2s sprite_unit;
+    vec2s sprite_unit, pixel_unit;
 };
 
 struct Atlas atlas_create_from_texture(struct Texture texture, ivec2s sprite_size);
