@@ -9,6 +9,7 @@
 #include "light.h"
 #include "sky.h"
 #include "../entity/ecs.h"
+#include "gen/worldgen.h"
 
 #define DAY_TICKS (14 * 60 * TICKRATE)
 #define NIGHT_TICKS (10 * 60 * TICKRATE)
@@ -17,11 +18,6 @@
 struct WorldUnloadedBlock {
     ivec3s pos;
     enum BlockId block;
-};
-
-struct WorldgenData {
-    s64 h;
-    f32 t, r;
 };
 
 // LONG_MIN is used for the unknown value so everything is greater than it
@@ -96,9 +92,6 @@ struct World {
         } mesh, load;
     } throttles;
 };
-
-// see worldgen.c
-void worldgen_generate(struct Chunk *);
 
 struct Heightmap *chunk_get_heightmap(struct Chunk *self);
 s64 world_heightmap_get(struct World *self, ivec2s p);

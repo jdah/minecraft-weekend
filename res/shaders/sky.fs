@@ -16,6 +16,11 @@ out vec4 frag_color;
 
 void main() {
     frag_color = color * (use_tex ? texture(tex, v_uv + uv_offset) : vec4(1.0));
+
+    // TODO: this is bad for performance
+    if (frag_color.a < 0.001) {
+        discard;
+    }
     
     float fog = smoothstep(fog_near, fog_far, length(v_viewpos));
     frag_color = vec4(mix(frag_color, fog_color, fog).rgb, frag_color.a);

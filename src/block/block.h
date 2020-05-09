@@ -9,7 +9,7 @@
 // Forward declaration
 struct World;
 
-#define BLOCK_ID_LAST COBBLESTONE
+#define BLOCK_ID_LAST PINE_LEAVES
 enum BlockId {
     AIR = 0,
     GRASS = 1,
@@ -29,7 +29,13 @@ enum BlockId {
     GRAVEL = 15,
     PLANKS = 16,
     TORCH = 17,
-    COBBLESTONE = 18
+    COBBLESTONE = 18,
+    SNOW = 19,
+    PODZOL = 20,
+    SHRUB = 21,
+    TALLGRASS = 22,
+    PINE_LOG = 23,
+    PINE_LEAVES = 24
 };
 
 struct Block {
@@ -101,6 +107,12 @@ static inline void block_init() {
     _BLOCK_DECL(planks);
     _BLOCK_DECL(torch);
     _BLOCK_DECL(cobblestone);
+    _BLOCK_DECL(snow);
+    _BLOCK_DECL(podzol);
+    _BLOCK_DECL(shrub);
+    _BLOCK_DECL(tallgrass);
+    _BLOCK_DECL(pine_log);
+    _BLOCK_DECL(pine_leaves);
 }
 
 #endif

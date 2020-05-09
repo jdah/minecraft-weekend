@@ -235,13 +235,13 @@ void world_init(struct World *self) {
     SRAND(NOW());
     self->seed = RAND(0, ULONG_MAX - 1);
 
-    self->throttles.load.max = 1;
+    self->throttles.load.max = 2;
     self->throttles.mesh.max = 8;
 
     self->unloaded_blocks.capacity = 64;
     self->unloaded_blocks.list = malloc(self->unloaded_blocks.capacity * sizeof(struct WorldUnloadedBlock));
 
-    self->chunks_size = 10;
+    self->chunks_size = 14;
     self->chunks = calloc(1, NUM_CHUNKS(self) * sizeof(struct Chunk *));
     self->heightmaps = calloc(1, NUM_HEIGHTMAPS(self) * sizeof(struct Heightmap *));
 
@@ -296,9 +296,9 @@ void world_remove_unloaded_block(struct World *self, size_t i) {
 static void load_empty_chunks(struct World *self) {
     world_foreach_offset_ftb(self, i, offset) {
         if (self->chunks[i] == NULL &&
-            self->throttles.mesh.count < self->throttles.mesh.max) {
+            self->throttles.load.count < self->throttles.load.max) {
             world_load_chunk(self, world_chunk_offset(self, i));
-            self->throttles.mesh.count++;
+            self->throttles.load.count++;
         }
     }
 }
