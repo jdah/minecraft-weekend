@@ -59,6 +59,7 @@ void init() {
 void destroy() {
     renderer_destroy(&state.renderer);
     world_destroy(&state.world);
+    ui_destroy(&state.ui);
 }
 
 void tick() {
