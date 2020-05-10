@@ -33,6 +33,7 @@
 #define sign(_x) ({ __typeof__(_x) _xx = (_x);\
     ((__typeof__(_x)) ( (((__typeof__(_x)) 0) < _xx) - (_xx < ((__typeof__(_x)) 0))));})
 #define lerpf(_a, _b, _t) ({ __typeof__(_t) _u = (_t); ((_a) * (1 - _u)) + ((_b) * _u); })
+#define safe_expf(_x, _e) ({ __typeof__(_x) __x = (_x); __typeof__(_e) __e = (_e); sign(__x) * fabsf(powf(fabsf(__x), __e)); })
 
 #define max(a, b) ({\
     __typeof__ (a) _a = (a); \

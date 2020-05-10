@@ -4,10 +4,10 @@
 #include "../chunk.h"
 #include "../world.h"
 
-#define RADIAL2I(c, r, v) \
+#define RADIAL2I(c, r, v)\
     (glms_vec2_norm(glms_vec2_sub(IVEC2S2V((c)), IVEC2S2V((v)))) / glms_vec2_norm(IVEC2S2V((r))))
 
-#define RADIAL3I(c, r, v) \
+#define RADIAL3I(c, r, v)\ 
     (glms_vec3_norm(glms_vec3_sub(IVEC3S2V((c)), IVEC3S2V((v)))) / glms_vec3_norm(IVEC3S2V((r))))
 
 #define WATER_LEVEL 0
@@ -15,16 +15,18 @@
 #define BIOME_LAST MOUNTAIN
 enum Biome {
     OCEAN,
-    PLAINS,
-    SHRUBLAND,
-    SWAMP,
+    RIVER,
     BEACH,
-    FOREST,
-    JUNGLE,
-    TUNDRA,
     DESERT,
-    HILLS,
+    SAVANNA,
+    JUNGLE,
+    GRASSLAND,
+    WOODLAND,
+    FOREST,
+    RAINFOREST,
     TAIGA,
+    TUNDRA,
+    ICE,
     MOUNTAIN
 };
 
@@ -35,205 +37,209 @@ struct Decoration {
 };
 
 struct BiomeData {
-    enum BlockId top_block, under_block;
-    f32 h, m, t, s, e, r, y;
+    enum BlockId top_block, bottom_block;
+    f32 roughness, scale, exp;
     struct Decoration decorations[MAX_DECORATIONS];
 };
 
 struct BiomeData BIOME_DATA[BIOME_LAST + 1] = {
     [OCEAN] = {
         .top_block = SAND,
-        .under_block = SAND,
-        .h = 1000.0f,
-        .m = 1000.0f,
-        .t = 1000.0f,
-        .s = 1.0f,
-        .e = 1.0f,
-        .r = NAN,
-        .y = NAN
+        .bottom_block = SAND,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f
     },
-    [PLAINS] = {
-        .top_block = GRASS,
-        .under_block = DIRT,
-        .h = 0.1f,
-        .m = 0.3f,
-        .t = 0.3f,
-        .s = 0.6f,
-        .e = 0.95f,
-        .r = 0.03f,
-        .y = 0.25f,
-        .decorations = {
-            { .f = worldgen_tree, .chance = 0.002f },
-            { .f = worldgen_flowers, .chance = 0.005f }
-        }
-    },
-    [SHRUBLAND] = {
-        .top_block = GRASS,
-        .under_block = DIRT,
-        .h = 0.1f,
-        .m = 0.2f,
-        .t = 0.7f,
-        .s = 1.0f,
-        .e = 1.0f,
-        .r = 1.0f,
-        .y = 0.2f
-    },
-    [SWAMP] = {
-        .top_block = DIRT,
-        .under_block = DIRT,
-        .h = 0.05f,
-        .m = 0.8f,
-        .t = 0.3f,
-        .s = 1.0f,
-        .e = 1.0f,
-        .r = 1.0f,
-        .y = 0.2f,
-        .decorations = {
-            { .f = worldgen_tree, .chance = 0.02f },
-        }
+    [RIVER] = {
+        .top_block = SAND,
+        .bottom_block = SAND,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f
     },
     [BEACH] = {
         .top_block = SAND,
-        .under_block = SAND,
-        .h = 0.0f,
-        .m = 0.3f,
-        .t = 0.3f,
-        .s = 0.4f,
-        .e = 1.0f,
-        .r = 0.05f,
-        .y = 0.2f
+        .bottom_block = SAND,
+        .roughness = 0.2f,
+        .scale = 0.8f,
+        .exp = 1.3f
     },
-    [FOREST] = {
-        .top_block = GRASS,
-        .under_block = DIRT,
-        .h = 0.12f,
-        .m = 0.38f,
-        .t = 0.28f,
-        .s = 0.6f,
-        .e = 0.95f,
-        .r = 0.05f,
-        .y = 0.26f,
+    [DESERT] = {
+        .top_block = SAND,
+        .bottom_block = SAND,
+        .roughness = 0.6f,
+        .scale = 0.6f,
+        .exp = 1.2f,
         .decorations = {
-            { .f = worldgen_tree, .chance = 0.0035f },
-            { .f = worldgen_flowers, .chance = 0.003f }
+            { .f = worldgen_shrub, .chance = 0.005f }
+        }
+    },
+    [SAVANNA] = {
+        .top_block = GRASS,
+        .bottom_block = DIRT,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f,
+        .decorations = {
+            { .f = worldgen_tree, .chance = 0.001f },
+            { .f = worldgen_flowers, .chance = 0.001f },
+            { .f = worldgen_grass, .chance = 0.005f },
         }
     },
     [JUNGLE] = {
         .top_block = GRASS,
-        .under_block = DIRT,
-        .h = 0.5f,
-        .m = 0.8f,
-        .t = 0.6f,
-        .s = 1.0f,
-        .e = 1.0f,
-        .r = 1.0f,
-        .y = 0.24f
-    },
-    [TUNDRA] = {
-        .top_block = SNOW,
-        .under_block = SNOW,
-        .h = 0.2f,
-        .m = 0.7f,
-        .t = -0.3f,
-        .s = 1.0f,
-        .e = 1.0f,
-        .r = 1.0f,
-        .y = 0.25f
-    },
-    [DESERT] = {
-        .top_block = SAND,
-        .under_block = SAND,
-        .h = 0.1f,
-        .m = 0.15f,
-        .t = 0.7f,
-        .s = 1.0f,
-        .e = 1.0f,
-        .r = 1.0f,
-        .y = 0.23f
-    },
-    [HILLS] = {
-        .top_block = GRASS,
-        .under_block = DIRT,
-        .h = 0.19f,
-        .m = 0.4f,
-        .t = 0.4f,
-        .s = 0.6f,
-        .e = 0.8f,
-        .r = 0.06f,
-        .y = 0.30f,
+        .bottom_block = DIRT,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f,
         .decorations = {
-            { .f = worldgen_tree, .chance = 0.0025f },
-            { .f = worldgen_flowers, .chance = 0.003f }
+            { .f = worldgen_tree, .chance = 0.01f },
+            { .f = worldgen_flowers, .chance = 0.001f },
+            { .f = worldgen_grass, .chance = 0.01f },
+        }
+    },
+    [GRASSLAND] = {
+        .top_block = GRASS,
+        .bottom_block = DIRT,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f,
+        .decorations = {
+            { .f = worldgen_tree, .chance = 0.0005f },
+            { .f = worldgen_flowers, .chance = 0.003f },
+            { .f = worldgen_grass, .chance = 0.02f },
+        }
+    },
+    [WOODLAND] = {
+        .top_block = GRASS,
+        .bottom_block = DIRT,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f,
+        .decorations = {
+            { .f = worldgen_tree, .chance = 0.007f },
+            { .f = worldgen_flowers, .chance = 0.003f },
+            { .f = worldgen_grass, .chance = 0.008f },
+        }
+    },
+    [FOREST] = {
+        .top_block = GRASS,
+        .bottom_block = DIRT,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f,
+        .decorations = {
+            { .f = worldgen_tree, .chance = 0.009f },
+            { .f = worldgen_flowers, .chance = 0.003f },
+            { .f = worldgen_grass, .chance = 0.008f },
+        }
+    },
+    [RAINFOREST] = {
+        .top_block = GRASS,
+        .bottom_block = DIRT,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f,
+        .decorations = {
+            { .f = worldgen_tree, .chance = 0.009f },
+            { .f = worldgen_flowers, .chance = 0.003f },
+            { .f = worldgen_grass, .chance = 0.008f },
         }
     },
     [TAIGA] = {
         .top_block = PODZOL,
-        .under_block = DIRT,
-        .h = 0.4f,
-        .m = 0.5f,
-        .t = 0.4f,
-        .s = 0.6f,
-        .e = 0.98f,
-        .r = 0.10f,
-        .y = 0.26f,
+        .bottom_block = DIRT,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f,
         .decorations = {
-            { .f = worldgen_pine, .chance = 0.003f },
+            { .f = worldgen_pine, .chance = 0.006f },
+            { .f = worldgen_flowers, .chance = 0.001f },
+            { .f = worldgen_grass, .chance = 0.008f },
         }
     },
-    [MOUNTAIN] = {
-        .top_block = STONE,
-        .under_block = STONE,
-        .h = 0.76f,
-        .m = 0.5f,
-        .t = 0.3f,
-        .s = 0.9f,
-        .e = 1.3f,
-        .r = 1.4f,
-        .y = 0.36f
+    [TUNDRA] = {
+        .top_block = SNOW,
+        .bottom_block = STONE,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f,
+        .decorations = {
+            { .f = worldgen_pine, .chance = 0.0005f }
+        }
     },
+    [ICE] = {
+        .top_block = SNOW,
+        .bottom_block = STONE,
+        .roughness = 1.0f,
+        .scale = 1.0f,
+        .exp = 1.0f
+    },
+    [MOUNTAIN] = {
+        .top_block = SNOW,
+        .bottom_block = STONE,
+        .roughness = 2.0f,
+        .scale = 1.2f,
+        .exp = 1.0f
+    },
+};
+
+const enum Biome BIOME_TABLE[6][6] = {
+    { ICE, TUNDRA, GRASSLAND,   DESERT,     DESERT,     DESERT },
+    { ICE, TUNDRA, GRASSLAND,   GRASSLAND,  DESERT,     DESERT },
+    { ICE, TUNDRA, WOODLAND,    WOODLAND,   SAVANNA,    SAVANNA },
+    { ICE, TUNDRA, TAIGA,       WOODLAND,   SAVANNA,    SAVANNA },
+    { ICE, TUNDRA, TAIGA,       FOREST,     JUNGLE,     JUNGLE },
+    { ICE, TUNDRA, TAIGA,       TAIGA,      JUNGLE,     JUNGLE }
+};
+
+const f32 HEAT_MAP[] = {
+    0.05f,
+    0.18f,
+    0.4f,
+    0.6f,
+    0.8f
+};
+
+const f32 MOISTURE_MAP[] = {
+    0.2f,
+    0.3f,
+    0.5f,
+    0.6f,
+    0.7f
 };
 
 // h = height, [-1, 1]
 // m = moisture, [0, 1]
 // t = temperature [0, 1]
-static enum Biome get_biome(f32 h, f32 m, f32 t) {
-    if (h <= 0.0f) {
+// i = mountain noise [0, 1]
+// i = modified heightmap noise [0, 1]
+static enum Biome get_biome(f32 h, f32 m, f32 t, f32 n, f32 i) {
+    if (h <= 0.0f || n <= 0.0f) {
         return OCEAN;
+    } else if (h <= 0.005f) {
+        return BEACH;
+    }
+    
+    if (n >= 0.1f && i >= 0.2f) {
+        return MOUNTAIN;
     }
 
-    const vec3s weight = (vec3s) {{ 1.0f, 1.0f, 1.0f }};
+    size_t t_i = 0, m_i = 0;
 
-    vec3s b = (vec3s) {{ h, m, t }};
-    enum Biome biome = OCEAN;
-    f32 d = 1000.0f;
-
-    for (size_t i = 0; i <= BIOME_LAST; i++) {
-        vec3s a_hmt = b,
-        b_hmt = (vec3s) {{
-            BIOME_DATA[i].h,
-            BIOME_DATA[i].m,
-            BIOME_DATA[i].t
-        }};
-
-        for (size_t j = 0; j < 3; j++) {
-            if (isnan(b_hmt.raw[j])) {
-                a_hmt.raw[j] = 0;
-                b_hmt.raw[j] = 0;
-            }
-        }
-
-        f32 d_i = glms_vec3_norm(
-            glms_vec3_mul(
-                glms_vec3_sub(a_hmt, b_hmt),
-                weight));
-
-        if (d_i < d) {
-            biome = i;
-            d = d_i; 
+    for (; t_i < 4; t_i++) {
+        if (t <= HEAT_MAP[t_i]) {
+            break;
         }
     }
 
-    return biome;
+    for (; m_i < 4; m_i++) {
+        if (m <= MOISTURE_MAP[m_i]) {
+            break;
+        }
+    }
+
+    return BIOME_TABLE[m_i][t_i];
 }
 
 static enum BlockId _get(struct Chunk *chunk, s32 x, s32 y, s32 z) {
@@ -281,48 +287,49 @@ void worldgen_generate(struct Chunk *chunk) {
         };
 
         struct Noise cs[] = {
-            combined(&bs[0], &os[1]),
-            combined(&bs[1], &os[2]),
-            combined(&os[3], &os[4])
+            combined(&bs[0], &bs[1]),
+            combined(&bs[2], &bs[3]),
+            combined(&os[3], &os[4]),
+            combined(&os[1], &os[2]),
+            combined(&os[1], &os[3])
         };
 
         struct Noise
-            n_h = expscale(&os[0], 1.2f, 1.0f / 128.0f),
-            n_m = expscale(&cs[0], 1.0f, 1.0f / 256.0f),
-            n_t = expscale(&cs[1], 1.0f, 1.0f / 256.0f),
-            n_r = cs[2];
+            n_h = expscale(&os[0], 1.3f, 1.0f / 128.0f),
+            n_m = expscale(&cs[0], 1.0f, 1.0f / 512.0f),
+            n_t = expscale(&cs[1], 1.0f, 1.0f / 512.0f),
+            n_r = expscale(&cs[2], 1.0f, 1.0f / 16.0f),
+            n_n = expscale(&cs[3], 3.0f, 1.0f / 512.0f),
+            n_p = expscale(&cs[4], 3.0f, 1.0f / 512.0f);
 
         for (s64 x = 0; x < CHUNK_SIZE.x; x++) {
             for (s64 z = 0; z < CHUNK_SIZE.z; z++) {
                 s64 wx = chunk->position.x + x, wz = chunk->position.z + z;
 
                 f32 h = n_h.compute(&n_h.params, chunk->world->seed, wx, wz),
-                    m = fabsf(n_m.compute(&n_m.params, chunk->world->seed, wx, wz)) * 1.2f,
-                    t = fabsf(n_t.compute(&n_t.params, chunk->world->seed, wx, wz)) * 1.2f;
+                    m = n_m.compute(&n_m.params, chunk->world->seed, wx, wz) * 0.5f + 0.5f,
+                    t = n_t.compute(&n_t.params, chunk->world->seed, wx, wz) * 0.5f + 0.5f,
+                    r = n_r.compute(&n_r.params, chunk->world->seed, wx, wz),
+                    n = n_n.compute(&n_n.params, chunk->world->seed, wx, wz),
+                    p = n_p.compute(&n_p.params, chunk->world->seed, wx, wz);
 
-                enum Biome biome_id = get_biome(h, m, t);
+                // add 'peak' noise to mountain noise
+                n += safe_expf(p, (1.0f - n) * 3.0f);
+
+                // decrease moisture with distance from ocean
+                // m += 0.05f * n;
+                
+                // decrease temperature with height
+                t -= 0.4f * n;
+                t = clamp(t, 0.0f, 1.0f);
+
+                enum Biome biome_id = get_biome(h, m, t, n, n + h);
                 struct BiomeData biome = BIOME_DATA[biome_id];
 
-                h = sign(h) * powf(fabsf(h), biome.e);
-
-                f32 r;
-
-                if (isnan(biome.r)) {
-                    r = 0.0f;
-                } else {
-                    struct Noise n = expscale(&n_r, 1.1f, biome.r / 64.0f);
-                    r = n.compute(&n.params, chunk->world->seed, wx, wz);
-                }
-
-                f32 s_y;
-                if (isnan(biome.y)) {
-                    s_y = 128.0f;
-                } else {
-                    s_y = 128.0f * (0.4f + (0.6f * biome.y));
-                }
+                h = sign(h) * fabsf(powf(fabsf(h), biome.exp));
 
                 heightmap->worldgen_data[x * CHUNK_SIZE.x + z] = (struct WorldgenData) {
-                    .h_b = ((h * s_y) + (r * 16.0f)) * biome.s,
+                    .h_b = ((h * 32.0f) + (n * 256.0f)) * biome.scale + (biome.roughness * r * 2.0f),
                     .b = biome_id
                 };
             }
@@ -355,7 +362,7 @@ void worldgen_generate(struct Chunk *chunk) {
             struct BiomeData biome_data = BIOME_DATA[biome]; 
 
             enum BlockId top_block = h > 48 ? SNOW : biome_data.top_block,
-                under_block = biome_data.under_block;
+                under_block = biome_data.bottom_block;
 
             for (s64 y = 0; y < CHUNK_SIZE.y; y++) {
                 s64 y_w = chunk->position.y + y;

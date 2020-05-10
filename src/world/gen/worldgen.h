@@ -17,9 +17,10 @@ struct WorldgenData {
 
 void worldgen_generate(struct Chunk *chunk);
 
-// treegen.c
 void worldgen_pine(struct Chunk *chunk, FWGGet get, FWGSet set, s64 x, s64 y, s64 z);
 void worldgen_tree(struct Chunk *chunk, FWGGet get, FWGSet set, s64 x, s64 y, s64 z);
 void worldgen_flowers(struct Chunk *chunk, FWGGet get, FWGSet set, s64 x, s64 y, s64 z);
+void worldgen_grass(struct Chunk *chunk, FWGGet get, FWGSet set, s64 x, s64 y, s64 z);
+void worldgen_shrub(struct Chunk *chunk, FWGGet get, FWGSet set, s64 x, s64 y, s64 z);
 
 #endif

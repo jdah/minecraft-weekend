@@ -199,9 +199,9 @@ static void stars_render(struct Sky *self, vec3s center, struct Texture tex) {
             x_offset = RAND(-48, 48),
             z_offset = RAND(-48, 48),
             y_offset = RAND(-48, 48),
-            r_offset = RAND(-10, 0) / 100.0f,
-            g_offset = RAND(-10, 0) / 100.0f,
-            b_offset = RAND(-10, 0) / 100.0f;
+            r_offset = RAND(-15, 0) / 100.0f,
+            g_offset = RAND(-15, 0) / 100.0f,
+            b_offset = RAND(-15, 0) / 100.0f;
         
         const u64 twinkle_rate = RAND(TICKRATE, TICKRATE * 2);
         const f32
@@ -214,7 +214,7 @@ static void stars_render(struct Sky *self, vec3s center, struct Texture tex) {
         m = glms_rotate(m, radians(-90.0f), (vec3s) {{ 0.0f, 1.0f, 0.0f }});
         m = glms_rotate(m, angle + angle_offset, (vec3s) {{ 1.0f, -0.3f, 0.25f }});
         m = glms_translate(m, (vec3s) {{ x_offset, y_offset, z_offset }});
-        m = glms_scale(m, (vec3s) {{ 0.2f + scale_offset, 0.2f + scale_offset, 0 }});
+        m = glms_scale(m, (vec3s) {{ 0.4f + scale_offset, 0.4f + scale_offset, 0 }});
 
         plane_render(
             self, &tex,

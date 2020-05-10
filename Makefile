@@ -8,7 +8,7 @@ LDFLAGS = lib/glad/src/glad.o lib/cglm/.libs/libcglm.a lib/glfw/src/libglfw3.a l
 # GLFW required frameworks
 LDFLAGS += -framework OpenGL -framework IOKit -framework CoreVideo -framework Cocoa
 
-SRC  = $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard src/**/**/*.c)
+SRC  = $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard src/**/**/*.c) $(wildcard src/**/**/**/*.c)
 OBJ  = $(SRC:.c=.o)
 BIN = bin
 
