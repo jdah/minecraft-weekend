@@ -4,7 +4,7 @@
     void ui_##_name(struct UI *self) {\
         for (size_t i = 0; i < self->components.count; i++) {\
             struct UIComponent c = self->components.elements[i];\
-            if (c._name != NULL) {\
+            if (c._name != NULL && c.enabled) {\
                 c._name(c.component);\
             }\
         }\
