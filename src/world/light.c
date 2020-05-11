@@ -145,7 +145,7 @@ void light_update(struct World *world, ivec3s pos) {
             ivec3s pos_n = glms_ivec3_add(pos, DIR2IVEC3S(d));
 
             if (!BLOCKS[world_get_block(world, pos_n)].transparent) {
-                return;
+                continue;
             }
 
             ENQUEUE(&queue, ((struct LightNode) { .pos = pos_n }));

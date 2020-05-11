@@ -32,8 +32,8 @@ extern struct UIComponent hotbar_init(struct UIHotbar *self);
 #define _UI_COMPONENT(_type, _name, _member)\
     extern struct UIComponent _name##_init(_type *self);\
     assert(self->components.count != UI_COMPONENTS_MAX);\
-    self->components.elements[self->components.count].enabled = true;\
-    self->components.elements[self->components.count++] = _name##_init(&self->_member);
+    self->components.elements[self->components.count++] = _name##_init(&self->_member);\
+    self->components.elements[self->components.count - 1].enabled = true;
 
 static inline void ui_init(struct UI *self) {
     _UI_COMPONENT(struct UIHotbar, hotbar, hotbar);

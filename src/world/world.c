@@ -235,8 +235,8 @@ void world_init(struct World *self) {
     SRAND(NOW());
     self->seed = RAND(0, ULONG_MAX - 1);
 
-    self->throttles.load.max = 4;
-    self->throttles.mesh.max = 16;
+    self->throttles.load.max = 2;
+    self->throttles.mesh.max = 8;
 
     self->unloaded_blocks.capacity = 64;
     self->unloaded_blocks.list = malloc(self->unloaded_blocks.capacity * sizeof(struct WorldUnloadedBlock));
