@@ -142,11 +142,13 @@ void light_update(struct World *world, ivec3s pos) {
         queue.size = 0;
 
         for (enum Direction d = 0; d < 6; d++) {
-            if (!BLOCKS[world_get_block(world, pos)].transparent) {
+            ivec3s pos_n = glms_ivec3_add(pos, DIR2IVEC3S(d));
+
+            if (!BLOCKS[world_get_block(world, pos_n)].transparent) {
                 return;
             }
 
-            ENQUEUE(&queue, ((struct LightNode) { .pos = glms_ivec3_add(pos, DIR2IVEC3S(d)) }));
+            ENQUEUE(&queue, ((struct LightNode) { .pos = pos_n }));
         }
 
         // enqueue for sunlight if this block is above the heightmap
@@ -165,7 +167,6 @@ void light_remove(struct World *world, ivec3s pos) {
     remove_channel(world, pos, 0xF0000, 16, SUNLIGHT);
 }
 
-// TODO: propagate light from light emitting blocks in the chunk
 void light_apply(struct Chunk *chunk) {
     struct Heightmap *heightmap = chunk_get_heightmap(chunk);
     struct LightQueue sunlight_queue = { .size = 0 },
