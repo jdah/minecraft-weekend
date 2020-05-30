@@ -1,4 +1,4 @@
-# Minecraft, but I made it in 48 hours*.
+# Minecraft, but I made it in 48 hours*
 
 ![screenshot](screenshots/1.png)
 
