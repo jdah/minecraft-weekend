@@ -1,8 +1,8 @@
 # Minecraft, but I made it in 48 hours*
 
-![screenshot](screenshots/1.png)
-
 \* I've actually updated it since - [see this commit for the 48 hour version](https://github.com/jdah/minecraft-weekend/tree/cb19738305804b5734faa7118c1c784f26ff9463).
+
+![screenshot](screenshots/1.png)
 
 ##### Features:
 - Infinite, procedurally generated world
