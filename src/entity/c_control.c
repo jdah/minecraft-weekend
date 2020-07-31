@@ -20,26 +20,26 @@ static void tick(struct ControlComponent *c_control, struct Entity entity) {
     struct BlockLookComponent *c_blocklook = ecs_get(entity, C_BLOCKLOOK);
     struct PhysicsComponent *c_physics = ecs_get(entity, C_PHYSICS);
     
-    c_movement->directions.forward = state.window->keyboard.keys[GLFW_KEY_W].down;
-    c_movement->directions.backward = state.window->keyboard.keys[GLFW_KEY_S].down;
-    c_movement->directions.left = state.window->keyboard.keys[GLFW_KEY_A].down;
-    c_movement->directions.right = state.window->keyboard.keys[GLFW_KEY_D].down;
+    c_movement->directions.forward = state.window->keyboard.keys[GLFW_KEY_W] & BUTTON_STATE_DOWN;
+    c_movement->directions.backward = state.window->keyboard.keys[GLFW_KEY_S] & BUTTON_STATE_DOWN;
+    c_movement->directions.left = state.window->keyboard.keys[GLFW_KEY_A] & BUTTON_STATE_DOWN;
+    c_movement->directions.right = state.window->keyboard.keys[GLFW_KEY_D] & BUTTON_STATE_DOWN;
     
-    c_movement->directions.up = state.window->keyboard.keys[GLFW_KEY_SPACE].down;
-    c_movement->directions.down = state.window->keyboard.keys[GLFW_KEY_LEFT_SHIFT].down;
+    c_movement->directions.up = state.window->keyboard.keys[GLFW_KEY_SPACE] & BUTTON_STATE_DOWN;
+    c_movement->directions.down = state.window->keyboard.keys[GLFW_KEY_LEFT_SHIFT] & BUTTON_STATE_DOWN;
 
-    if (state.window->keyboard.keys[GLFW_KEY_K].pressed_tick) {
+    if (state.window->keyboard.keys[GLFW_KEY_K] & BUTTON_STATE_PRESSED_TICK) {
         c_movement->flags.flying = !c_movement->flags.flying;
     }
 
-    if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_LEFT].pressed_tick
+    if ((state.window->mouse.buttons[GLFW_MOUSE_BUTTON_LEFT] & BUTTON_STATE_PRESSED_TICK)
         && c_blocklook->hit) {
         world_set_block(entity.ecs->world, c_blocklook->pos, AIR);
     }
 
     struct Block held_block = BLOCKS[state.ui.hotbar.values[state.ui.hotbar.index]];
 
-    if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_RIGHT].pressed_tick
+    if ((state.window->mouse.buttons[GLFW_MOUSE_BUTTON_RIGHT] & BUTTON_STATE_PRESSED_TICK)
         && c_blocklook->hit) {
 
         // only allow the block to be placed if it wouldn't collide with this player's AABB

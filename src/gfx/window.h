@@ -4,18 +4,21 @@
 #include "gfx.h"
 #include "../util/util.h"
 
-struct Button {
-    bool down, last, last_tick, pressed, pressed_tick;
+enum ButtonState {
+    BUTTON_STATE_DOWN         = 0x1,
+    BUTTON_STATE_LAST         = 0x2,
+    BUTTON_STATE_LAST_TICK    = 0x4,
+    BUTTON_STATE_PRESSED      = 0x8,
+    BUTTON_STATE_PRESSED_TICK = 0x10,
 };
 
-
 struct Mouse {
-    struct Button buttons[GLFW_MOUSE_BUTTON_LAST];
+    enum ButtonState buttons[GLFW_MOUSE_BUTTON_LAST];
     vec2s position, delta;
 };
 
 struct Keyboard {
-    struct Button keys[GLFW_KEY_LAST];
+    enum ButtonState keys[GLFW_KEY_LAST];
 };
 
 typedef void (*FWindow)();

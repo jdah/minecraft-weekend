@@ -58,7 +58,7 @@ static void render(struct UIHotbar *self) {
 
 static void update(struct UIHotbar *self) {
     for (size_t i = 0; i < 10; i++) {
-        if (state.window->keyboard.keys[GLFW_KEY_0 + i].pressed) {
+        if (state.window->keyboard.keys[GLFW_KEY_0 + i] & BUTTON_STATE_PRESSED) {
             self->index = i == 0 ? 9 : (i - 1);
         }
     }

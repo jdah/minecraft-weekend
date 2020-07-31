@@ -28,10 +28,10 @@ static void _key_callback(GLFWwindow *handle, int key, int scancode, int action,
 
     switch (action) {
         case GLFW_PRESS:
-            window.keyboard.keys[key].down = true;
+            window.keyboard.keys[key] |= BUTTON_STATE_DOWN;
             break;
         case GLFW_RELEASE:
-            window.keyboard.keys[key].down = false;
+            window.keyboard.keys[key] &= BUTTON_STATE_DOWN;
             break;
         default:
             break;
@@ -45,10 +45,10 @@ static void _mouse_callback(GLFWwindow *handle, int button, int action, int mods
 
     switch (action) {
         case GLFW_PRESS:
-            window.mouse.buttons[button].down = true;
+            window.mouse.buttons[button] |= BUTTON_STATE_DOWN;
             break;
         case GLFW_RELEASE:
-            window.mouse.buttons[button].down = false;
+            window.mouse.buttons[button] &= BUTTON_STATE_DOWN;
             break;
         default:
             break;
@@ -101,17 +101,19 @@ void window_create(FWindow init, FWindow destroy, FWindow tick,  FWindow update,
     glfwSwapInterval(1);
 }
 
-static void button_array_tick(size_t n, struct Button *buttons) {
+static void button_array_tick(size_t n, enum ButtonState *buttons) {
     for (size_t i = 0; i < n; i++) {
-        buttons[i].pressed_tick = buttons[i].down && !buttons[i].last_tick;
-        buttons[i].last_tick = buttons[i].down;
+        buttons[i] |= BUTTON_STATE_PRESSED_TICK &
+            ((buttons[i] & BUTTON_STATE_DOWN) && !(buttons[i] & BUTTON_STATE_LAST_TICK));
+        buttons[i] |= BUTTON_STATE_LAST_TICK & (buttons[i] & BUTTON_STATE_DOWN);
     }
 }
 
-static void button_array_update(size_t n, struct Button *buttons) {
+static void button_array_update(size_t n, enum ButtonState *buttons) {
     for (size_t i = 0; i < n; i++) {
-        buttons[i].pressed = buttons[i].down && !buttons[i].last;
-        buttons[i].last = buttons[i].down;
+        buttons[i] |= BUTTON_STATE_PRESSED &
+            ((buttons[i] & BUTTON_STATE_DOWN) && !(buttons[i] & BUTTON_STATE_LAST));
+        buttons[i] |= BUTTON_STATE_LAST & (buttons[i] & BUTTON_STATE_DOWN);
     }
 }
 
