@@ -6,25 +6,33 @@
 
 ##### Features:
 - Infinite, procedurally generated world
-- "Biomes"
+- Infinite height/depth
+- Day/night cycle
+- Biomes
+- ECS-driven player and entities with full colision and movement
+- Full RGB lighting
 - Full transparency + translucency support
 - Sprite blocks (flowers)
 - Animated blocks (water + lava)
 - Distaince fog
-- Blocks
-  - Grass
-  - Dirt
-  - Stone
-  - Sand
-  - Water
-  - Glass
-  - Log
-  - Leaves
-  - Rose
-  - Buttercup
-  - Coal
-  - Copper
-  - Lava
-  - Clay
-  - Gravel
-  - Planks
+- A whole lot of different block types
+- More
+
+##### Building
+
+###### Unix-like
+
+`$ make`
+
+The following static libraries under `lib/` must be built before the main project can be built:
+
+- GLAD `lib/glad/src/glad.o`
+- CGLM `lib/cglm/.libs/libcglm.a`
+- GLFW `lib/glfw/src/libglfw3.a`
+- libnoise `lib/noise/libnoise.a`
+
+All of the above have their own Makefile under their respective subdirectory.
+
+###### Windows
+
+good luck 🤷‍♂️ probably try building under WSL and using an X environment to pass graphics through.
