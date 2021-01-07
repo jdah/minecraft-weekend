@@ -21,7 +21,7 @@
 ##### Building
 
 ###### Unix-like
-
+`$ git clone --recurse-submodules https://github.com/jdah/minecraft-weekend.git`\
 `$ make`
 
 The following static libraries under `lib/` must be built before the main project can be built:
@@ -31,7 +31,8 @@ The following static libraries under `lib/` must be built before the main projec
 - GLFW `lib/glfw/src/libglfw3.a`
 - libnoise `lib/noise/libnoise.a`
 
-All of the above have their own Makefile under their respective subdirectory.
+All of the above have their own Makefile under their respective subdirectory and can be built with `$make libs`.
+If libraries are not found, ensure that submodules have been cloned.
 
 ###### Windows
 
