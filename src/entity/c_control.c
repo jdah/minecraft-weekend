@@ -6,13 +6,24 @@
 static void update(struct ControlComponent *c_control, struct Entity entity) {
     struct CameraComponent *c_camera = ecs_get(entity, C_CAMERA);
 
+    f32 pitch = c_camera->camera.pitch;
+    if (pitch < -1.57)
+    {
+        pitch = pitch + 0.01;
+    }
+    if (pitch > 1.57)
+    {
+        pitch = pitch -0.01;
+    }
+    c_camera->camera.pitch = pitch;
+
     c_camera->camera.pitch -= state.window->mouse.delta.y /
                               (((f32)state.window->frame_delta) /
-                               (c_control->mouse_sensitivity * 10000.0f));
+                               (c_control->mouse_sensitivity * 20000.0f));
 
     c_camera->camera.yaw -= state.window->mouse.delta.x /
                             (((f32)state.window->frame_delta) /
-                             (c_control->mouse_sensitivity * 10000.0f));
+                             (c_control->mouse_sensitivity * 20000.0f));
 }
 
 static void tick(struct ControlComponent *c_control, struct Entity entity) {
