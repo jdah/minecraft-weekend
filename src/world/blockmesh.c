@@ -1,6 +1,6 @@
 #include "blockmesh.h"
 #include "chunkmesh.h"
-#include "block.h"
+#include "../block/block.h"
 #include "chunk.h"
 
 static const u32 FACE_INDICES[] = {1, 0, 3, 1, 3, 2};
