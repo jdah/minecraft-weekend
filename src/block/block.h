@@ -80,8 +80,8 @@ struct Block {
 
 #define MAX_BLOCK_ID INT16_MAX
 
-struct Block BLOCK_DEFAULT;
-struct Block BLOCKS[MAX_BLOCK_ID];
+extern struct Block BLOCK_DEFAULT;
+extern struct Block BLOCKS[MAX_BLOCK_ID];
 
 #define _BLOCK_DECL(_name)\
     extern void _name##_init();\

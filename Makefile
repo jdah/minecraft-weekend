@@ -12,6 +12,10 @@ ifeq ($(UNAME_S), Darwin)
 	LDFLAGS += -framework OpenGL -framework IOKit -framework CoreVideo -framework Cocoa
 endif
 
+ifeq ($(UNAME_S), Linux)
+	LDFLAGS += -ldl -lpthread
+endif
+
 SRC  = $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard src/**/**/*.c) $(wildcard src/**/**/**/*.c)
 OBJ  = $(SRC:.c=.o)
 BIN = bin

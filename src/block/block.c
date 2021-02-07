@@ -14,7 +14,6 @@ static Torchlight get_torchlight(struct World *world, ivec3s pos) {
     return 0x0000;
 }
 
-
 static void get_aabb(struct World *world, ivec3s pos, AABB dest) {
     dest[0] = IVEC3S2V(pos);
     dest[1] = (vec3s) {{ pos.x + 1.0f, pos.y + 1.0f, pos.z + 1.0f }};
@@ -26,6 +25,9 @@ static void get_mesh_information(
     ivec2s *uv_offset_out, ivec2s *uv_size_out) {
     assert(false);
 }
+
+// declared in block.h
+struct Block BLOCKS[MAX_BLOCK_ID];
 
 // Contains all default behavior for a block
 struct Block BLOCK_DEFAULT = {

@@ -1,5 +1,5 @@
 #include "light.h"
-#include "block.h"
+#include "../block/block.h"
 #include "chunk.h"
 #include "world.h"
 
