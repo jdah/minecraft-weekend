@@ -1,6 +1,7 @@
 #include "../state.h"
 #include "world.h"
 #include "light.h"
+#include "../util/sort.h"
 
 // the total number of chunks in _w->chunks
 #define NUM_CHUNKS(_w) ((_w)->chunks_size * (_w)->chunks_size * (_w)->chunks_size)
@@ -15,22 +16,22 @@
         i++)
 
 // back-to-front ordering pointer comparator
-static int _btf_pcmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
+static int _btf_pcmp(const ivec3s **a, const ivec3s **b, ivec3s *center) {
     return -(glms_ivec3_norm2(glms_ivec3_sub(*center, **a)) - glms_ivec3_norm2(glms_ivec3_sub(*center, **b)));
 }
 
 // front-to-back ordering pointer comparator
-static int _ftb_pcmp(ivec3s *center, const ivec3s **a, const ivec3s **b) {
+static int _ftb_pcmp(const ivec3s **a, const ivec3s **b, ivec3s *center) {
     return glms_ivec3_norm2(glms_ivec3_sub(*center, **a)) - glms_ivec3_norm2(glms_ivec3_sub(*center, **b));
 }
 
 // back-to-front ordering comparator
-static int _btf_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
+static int _btf_cmp(const ivec3s *a, const ivec3s *b, ivec3s *center) {
     return -(glms_ivec3_norm2(glms_ivec3_sub(*center, *a)) - glms_ivec3_norm2(glms_ivec3_sub(*center, *b)));
 }
 
 // front-to-back ordering comparator
-static int _ftb_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
+static int _ftb_cmp(const ivec3s *a, const ivec3s *b, ivec3s *center) {
     return -(glms_ivec3_norm2(glms_ivec3_sub(*center, *b)) - glms_ivec3_norm2(glms_ivec3_sub(*center, *a)));
 }
 
@@ -38,13 +39,12 @@ static int _ftb_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
 // _v0 is 'n'
 // _v1 is counter
 // _v2 is ivec3s* offsets array
-// TODO: qsort_r is not portable
 #define _world_foreach_cmp_impl(_w, _cname, _cmp, _v0, _v1, _v2)\
     size_t _v0 = 0, _v1 = 0;\
     ivec3s *_v2[NUM_CHUNKS(_w)];\
     for (_v1 = 0; _v1 < NUM_CHUNKS(_w); _v1++)\
         { if (_w->chunks[_v1] != NULL) _v2[_v0++] = &_w->chunks[_v1]->offset; }\
-    qsort_r(_v2, _v0, sizeof(ivec3s*), &_w->center_offset, (int (*)(void*, const void*, const void*)) _cmp);\
+    sort_r(_v2, _v0, sizeof(ivec3s*), (int (*)(const void*, const void*, void*)) _cmp, &_w->center_offset);\
     struct Chunk *_cname;\
     for (size_t i = 0; i < _v0 &&\
         (_cname = (_w)->chunks[world_chunk_index(_w, *_v2[i])]) != (void *) INT64_MAX;\
@@ -55,7 +55,7 @@ static int _ftb_cmp(ivec3s *center, const ivec3s *a, const ivec3s *b) {
     ivec3s _v2[_v0];\
     for (_v1 = 0; _v1 < _v0; _v1++)\
         { _v2[_v1] = world_chunk_offset(_w, _v1); }\
-    qsort_r(_v2, _v0, sizeof(ivec3s), &_w->center_offset, (int (*)(void*, const void*, const void*)) _cmp);\
+    sort_r(_v2, _v0, sizeof(ivec3s), (int (*)(const void*, const void*, void*)) _cmp, &_w->center_offset);\
     ivec3s _oname;\
     for (_v1 = 0; _v1 < _v0 &&\
         ((_iname = world_chunk_index(_w, _v2[_v1])) != (size_t) - 1 &&\
