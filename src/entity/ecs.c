@@ -1,11 +1,13 @@
 #include "ecs.h"
 
-#define ECS_TAG(_p) *((ECSTag *) (((void *) (_p)) - sizeof(ECSTag)))
-#define ECS_PTAG(_p) ((ECSTag *) (((void *) (_p)) - sizeof(ECSTag)))
-#define ECSCL_ELEMENT_SIZE(_plist) ((_plist)->component_size + sizeof(ECSTag))
+// TODO: real alignment, this is a silly hack
+#define ECS_TAG_SIZE 16
+#define ECS_TAG(_p) *((ECSTag *) (((void *) (_p)) - ECS_TAG_SIZE))
+#define ECS_PTAG(_p) ((ECSTag *) (((void *) (_p)) - ECS_TAG_SIZE))
+#define ECSCL_ELEMENT_SIZE(_plist) ((_plist)->component_size + ECS_TAG_SIZE)
 #define ECSCL_GET(_plist, _i) ({\
         struct ComponentList *_pl = (_plist);\
-        ((_pl)->components) + ((_i) * ECSCL_ELEMENT_SIZE(_pl)) + sizeof(ECSTag);\
+        ((_pl)->components) + ((_i) * ECSCL_ELEMENT_SIZE(_pl)) + ECS_TAG_SIZE;\
     })
 
 void _ecs_register_internal(
