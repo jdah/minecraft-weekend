@@ -14,7 +14,7 @@
 - Full transparency + translucency support
 - Sprite blocks (flowers)
 - Animated blocks (water + lava)
-- Distaince fog
+- Distance fog
 - A whole lot of different block types
 - More
 
