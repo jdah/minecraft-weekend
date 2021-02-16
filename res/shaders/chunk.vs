@@ -31,12 +31,12 @@ void main() {
     // - (4) B
     // - (4) intensity
     vec3 light = vec3(
-        ((color & 0x0F000U) >> 12U) / 15.0,
-        ((color & 0x00F00U) >>  8U) / 15.0,
-        ((color & 0x000F0U) >>  4U) / 15.0
-    ) * ((color & 0x0000FU) / 15.0);
+        float((color & 0x0F000U) >> 12U) / 15.0,
+        float((color & 0x00F00U) >>  8U) / 15.0,
+        float((color & 0x000F0U) >>  4U) / 15.0
+    ) * (float(color & 0x0000FU) / 15.0);
 
-    light = max(vec3(sunlight_color.rgb) * (((color & 0xF0000U) >> 16U) / 15.0), light);
+    light = max(vec3(sunlight_color.rgb) * (float((color & 0xF0000U) >> 16U) / 15.0), light);
 
     // adjust light range to prevent entirely black lighting
     const float min_light = 0.0025;
