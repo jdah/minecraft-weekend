@@ -55,8 +55,8 @@ static void _mouse_callback(GLFWwindow *handle, int button, int action, int mods
     }
 }
 
-static void _glfw_error_callback(int error_code, const char *description) {
-    fprintf(stderr, "GLFW Error: %s\n", description);
+static void _error_callback(int code, const char *description) {
+    fprintf(stderr, "GLFW error %d: %s\n", code, description);
 }
 
 void window_create(FWindow init, FWindow destroy, FWindow tick,  FWindow update, FWindow render) {
@@ -69,7 +69,7 @@ void window_create(FWindow init, FWindow destroy, FWindow tick,  FWindow update,
     window.last_frame = NOW();
     window.last_second = NOW();
 
-    glfwSetErrorCallback(_glfw_error_callback);
+    glfwSetErrorCallback(_error_callback);
 
     if (!glfwInit()){
         fprintf(stderr, "%s",  "error initializing GLFW\n");

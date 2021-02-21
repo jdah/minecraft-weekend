@@ -75,6 +75,9 @@ void renderer_update(struct Renderer *self) {
 void renderer_prepare(struct Renderer *self, enum RenderPass pass) {
     switch (pass) {
         case PASS_2D:
+            ortho_camera_init(
+                &self->ortho_camera, GLMS_VEC2_ZERO,
+                (vec2s) {{ state.window->size.x, state.window->size.y }});
             glClear(GL_DEPTH_BUFFER_BIT);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             glDisable(GL_DEPTH_TEST);
