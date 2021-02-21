@@ -34,6 +34,9 @@ The following static libraries under `lib/` must be built before the main projec
 All of the above have their own Makefile under their respective subdirectory and can be built with `$make libs`.
 If libraries are not found, ensure that submodules have been cloned.
 
+*Be sure* to run with `$ ./bin/game` out of the root directory of the repository.
+If you are getting "cannot open file" errors, this is the issue. 
+
 ###### Windows
 
 good luck 🤷‍♂️ probably try building under WSL and using an X environment to pass graphics through.
