@@ -1,4 +1,4 @@
-#version 410
+#version 330
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 uv;
@@ -9,12 +9,12 @@ uniform mat4 m, v, p;
 uniform vec4 sunlight_color;
 
 // should match enum Direction in direction.h
-const uint NORTH = 0;
-const uint SOUTH = 1;
-const uint EAST = 2;
-const uint WEST = 3;
-const uint UP = 4;
-const uint DOWN = 5;
+const uint NORTH = 0U;
+const uint SOUTH = 1U;
+const uint EAST = 2U;
+const uint WEST = 3U;
+const uint UP = 4U;
+const uint DOWN = 5U;
 
 out vec4 v_color;
 out vec2 v_uv;
