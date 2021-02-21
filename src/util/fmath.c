@@ -18,7 +18,7 @@ static vec3s intbound(vec3s s, vec3s ds) {
     vec3s v;
     #if defined(__clang__)
     #pragma clang loop unroll_count(3)
-    #elif define(__GNUC__)
+    #elif defined(__GNUC__)
     #pragma GCC unroll 3
     #endif
     for (size_t i = 0; i < 3; i++) {
