@@ -86,6 +86,11 @@ void update() {
     if (state.window->keyboard.keys[GLFW_KEY_T].pressed) {
         state.renderer.flags.wireframe = !state.renderer.flags.wireframe;
     }
+
+    // mouse toggle (ESC)
+    if (state.window->keyboard.keys[GLFW_KEY_ESCAPE].pressed) {
+        mouse_set_grabbed(!mouse_get_grabbed());
+    }
 }
 
 void render() {

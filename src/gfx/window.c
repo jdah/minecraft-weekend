@@ -192,3 +192,7 @@ void window_loop() {
 void mouse_set_grabbed(bool grabbed) {
     glfwSetInputMode(window.handle, GLFW_CURSOR, grabbed ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
+
+bool mouse_get_grabbed() {
+    return glfwGetInputMode(window.handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
+}

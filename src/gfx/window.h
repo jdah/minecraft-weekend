@@ -39,5 +39,6 @@ extern struct Window window;
 void window_loop();
 void window_create(FWindow init, FWindow destroy, FWindow tick,  FWindow update, FWindow render);
 void mouse_set_grabbed(bool grabbed);
+bool mouse_get_grabbed();
 
 #endif
