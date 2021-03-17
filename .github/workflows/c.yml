@@ -1,0 +1,21 @@
+name: C CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Install dependencies
+      run: sudo apt-get -qq install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+    - name: make
+      run: make
