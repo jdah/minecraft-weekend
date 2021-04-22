@@ -18,6 +18,13 @@
 - A whole lot of different block types
 - More
 
+#### Requirements
+
+Prerequisites:
+
+ * [cmake][cmake-download]
+ * [clang][clang-download]
+
 #### Building
 
 ##### Unix-like
@@ -42,3 +49,6 @@ If you are getting "cannot open file" errors (such as "cannot find ./res/shaders
 ##### Windows
 
 good luck 🤷‍♂️ probably try building under WSL and using an X environment to pass graphics through.
+
+[cmake-download]: https://cmake.org/download/
+[clang-download]: https://releases.llvm.org/download.html
