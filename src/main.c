@@ -10,7 +10,7 @@
 // global state
 struct State state;
 
-void init() {
+void nit() {
     block_init();
     state.window = &window;
     renderer_init(&state.renderer);
