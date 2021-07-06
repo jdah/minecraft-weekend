@@ -24,6 +24,8 @@
 `$ git clone --recurse-submodules https://github.com/jdah/minecraft-weekend.git`\
 `$ make`
 
+Note: FreeBSD users have to substitute `make` with `gmake`.
+
 The following static libraries under `lib/` must be built before the main project can be built:
 
 - GLAD `lib/glad/src/glad.o`

@@ -25,7 +25,7 @@ static inline void sort_r(
 #if (defined _GNU_SOURCE || defined __GNU__ || defined __linux__)
     qsort_r(base, nel, width, cmp, arg);
 #elif (defined __APPLE__ || defined __MACH__ || defined __DARWIN__ || \
-        defined __FREEBSD__ || defined __BSD__ || \
+        defined __FreeBSD__ || defined __BSD__ || \
         defined OpenBSD3_1 || defined OpenBSD3_9)
     struct _sort_data tmp = {arg, cmp};
     qsort_r(base, nel, width, &tmp, &_sort_r_arg_swap);
