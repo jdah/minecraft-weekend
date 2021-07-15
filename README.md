@@ -43,7 +43,7 @@ If you are getting "cannot open file" errors (such as "cannot find ./res/shaders
 
 With the annoucement of Linux GUI apps for WSL, you can run this game on Windows.
 
-First install the Insider preview of [Windows](https://insider.windows.com/en-us/)
+First install the Insider preview of [Windows 10](https://insider.windows.com/en-us/register)
 
 Then open Powershell as Administrator and type:
 `wsl --install`
