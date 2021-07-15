@@ -41,4 +41,23 @@ If you are getting "cannot open file" errors (such as "cannot find ./res/shaders
 
 ##### Windows
 
-good luck 🤷‍♂️ probably try building under WSL and using an X environment to pass graphics through.
+With the annoucement of Linux GUI apps for WSL, you can run this game on Windows.
+
+First install the Insider preview of [Windows](https://insider.windows.com/en-us/)
+
+Then open Powershell as Administrator and type:
+`wsl --install`
+This will install Ubuntu for WSL. Make sure to reboot your machine.
+
+Next you want to follow the setup instructions for Ubuntu.
+
+Update and upgrade apt:
+`sudo apt update`
+`sudo apt upgrade`
+
+Now use apt to install the following packages:
+`sudo apt install clang cmake make xorg-dev libglu1-mesa-dev doxygen libx11-dev`
+
+If you encounter any errors saying `E: Unable to locate package` update and upgrade apt again.
+
+Now follow the steps found in the Unix-like section and you should be able to run the game.
