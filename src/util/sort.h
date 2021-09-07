@@ -30,8 +30,8 @@ static inline void sort_r(
     struct _sort_data tmp = {arg, cmp};
     qsort_r(base, nel, width, &tmp, &_sort_r_arg_swap);
 #elif (defined _WIN32 || defined _WIN64 || defined __WINDOWS__)
-    struct _sort_r_data tmp = {arg, cmp};
-    qsort_s(*base, nel, width, &sort_r_arg_swap, &tmp);
+    struct _sort_r_data *tmp = {arg, cmp};
+    qsort_s(base, nel, width, &_sort_r_arg_swap, &tmp);
 #else
     #error cannnot detect platform for sort_r
 #endif
