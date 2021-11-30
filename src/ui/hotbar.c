@@ -64,8 +64,29 @@ static void update(struct UIHotbar *self) {
     }
 }
 
+static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset){
+    // Y-offset is either 1 or -1 (scroll up or down)
+    struct UIHotbar* self = (struct UIHotbar*)glfwGetWindowUserPointer(window);
+    // Scroll left 
+    if (yoffset == 1){
+        if (self->index == 0){
+            self->index = 9;
+        }else{
+            self->index -= 1;
+        }
+    // Scroll right
+    }else if(yoffset == -1){
+        self->index += 1;
+        self->index = self->index % 10;
+    }
+    return;
+}
+
 struct UIComponent hotbar_init(struct UIHotbar *self) {
     self->index = 0;
+
+    glfwSetWindowUserPointer(state.window->handle,self);
+    glfwSetScrollCallback(state.window->handle,scrollCallback);
 
     memcpy(self->values, (enum BlockId[]) {
             GRASS,
