@@ -50,7 +50,9 @@ $(BIN)/game: $(OBJ) | $(BIN)
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 %.o: %.c | libs
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CC) -o $@ -MMD -c $< $(CFLAGS)
 
 clean:
 	rm -rf $(BIN) $(OBJ)
+
+-include $(OBJ:.o=.d)
