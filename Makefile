@@ -53,6 +53,6 @@ $(BIN)/game: $(OBJ) | $(BIN)
 	$(CC) -o $@ -MMD -c $< $(CFLAGS)
 
 clean:
-	rm -rf $(BIN) $(OBJ)
+	rm -rf $(BIN) $(OBJ) $(OBJ:.o=.d)
 
 -include $(OBJ:.o=.d)
