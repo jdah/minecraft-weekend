@@ -20,26 +20,36 @@ SRC  = $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard src/**/**/*.c) $(wi
 OBJ  = $(SRC:.c=.o)
 BIN = bin
 
-.PHONY: all clean
+.PHONY: all clean libs game run dirs
 
-all: dirs libs game
+game: $(BIN)/game
 
-libs:
-	cd lib/cglm && cmake . -DCGLM_STATIC=ON && make
+run: $(BIN)/game
+	$<
+
+libs: lib/cglm/libcglm.a lib/glad/src/glad.o lib/glfw/src/libglfw3.a lib/noise/libnoise.a
+
+lib/cglm/libcglm.a:
+	cd lib/cglm && cmake . -DCGLM_STATIC=ON && $(MAKE)
+
+lib/glad/src/glad.o:
 	cd lib/glad && $(CC) -o src/glad.o -Iinclude -c src/glad.c
-	cd lib/glfw && cmake . && make
-	cd lib/noise && make
 
-dirs:
-	mkdir -p ./$(BIN)
+lib/glfw/src/libglfw3.a:
+	cd lib/glfw && cmake . && $(MAKE)
 
-run: all
-	$(BIN)/game
+lib/noise/libnoise.a:
+	cd lib/noise && $(MAKE)
 
-game: $(OBJ)
-	$(CC) -o $(BIN)/game $^ $(LDFLAGS)
+dirs: $(BIN)
 
-%.o: %.c
+$(BIN):
+	mkdir -p -- $@
+
+$(BIN)/game: $(OBJ) | $(BIN)
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+
+%.o: %.c | libs
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
