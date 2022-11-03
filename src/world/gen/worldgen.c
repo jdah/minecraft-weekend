@@ -1,4 +1,3 @@
-
 #include "worldgen.h"
 #include "noise.h"
 #include "../chunk.h"
