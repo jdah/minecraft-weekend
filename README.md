@@ -23,6 +23,10 @@
 ##### Unix-like
 `$ git clone --recurse-submodules https://github.com/jdah/minecraft-weekend.git`\
 `$ make`
+` to comepile this game just  run requirements.sh to install the requirements and comepile this
+` $ cd minecraft-weekend 
+` $ chmod +x requirements.sh 
+` $ sudo requirements.sh 
 
 The following static libraries under `lib/` must be built before the main project can be built:
 
