@@ -75,6 +75,10 @@ void tick() {
     if (state.window->keyboard.keys[GLFW_KEY_P].pressed_tick) {
         state.world.ticks += (TOTAL_DAY_TICKS) / 3;
     }
+
+    if (state.window->keyboard.keys[GLFW_KEY_Q].pressed_tick) {
+      exit(0);
+    }
 }
 
 void update() {
