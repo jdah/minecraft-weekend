@@ -2,6 +2,7 @@
 
 #include "../state.h"
 #include "../ui/ui.h"
+#include <stdio.h>
 
 static void update(struct ControlComponent *c_control, struct Entity entity) {
     struct CameraComponent *c_camera = ecs_get(entity, C_CAMERA);
@@ -31,6 +32,11 @@ static void tick(struct ControlComponent *c_control, struct Entity entity) {
 
     if (state.window->keyboard.keys[GLFW_KEY_K].pressed_tick) {
         c_movement->flags.flying = !c_movement->flags.flying;
+    }
+
+    if (!c_movement->flags.flying && state.window->keyboard.keys[GLFW_KEY_LEFT_SHIFT].pressed_tick) { 
+        printf("Running: %d\n", c_movement->flags.running);
+        c_movement->flags.running = !c_movement->flags.running;
     }
 
     if (state.window->mouse.buttons[GLFW_MOUSE_BUTTON_LEFT].pressed_tick
