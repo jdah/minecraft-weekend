@@ -22,6 +22,7 @@
 
 ##### Unix-like
 `$ git clone --recurse-submodules https://github.com/jdah/minecraft-weekend.git`\
+`$ git config --local submodule.lib/cglm.ignore all`\
 `$ make`
 
 The following static libraries under `lib/` must be built before the main project can be built:
