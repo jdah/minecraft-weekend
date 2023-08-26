@@ -1,5 +1,6 @@
 #include "gfx/window.h"
 #include "gfx/gfx.h"
+#include <freetype/freetype.h>
 
 #include "state.h"
 #include "block/block.h"
@@ -100,7 +101,6 @@ void update() {
 void render() {
     renderer_prepare(&state.renderer, PASS_3D);
     world_render(&state.world);
-
     renderer_prepare(&state.renderer, PASS_2D);
     renderer_push_camera(&state.renderer);
     {
