@@ -19,6 +19,7 @@ struct MovementComponent {
 
     struct {
         bool flying: 1;
+        bool running: 1;
     } flags;
 };
 

@@ -50,7 +50,7 @@ void init() {
     c_control->mouse_sensitivity = 3.0f;
 
     struct PositionComponent *c_position = ecs_get(player, C_POSITION);
-    c_position->position = (vec3s) {{ 0, 80, 0 }};
+    c_position->position = (vec3s) {{ 0, 0, 0 }};
 
     state.world.entity_load = player;
     state.world.entity_view = player;
@@ -74,6 +74,10 @@ void tick() {
 
     if (state.window->keyboard.keys[GLFW_KEY_P].pressed_tick) {
         state.world.ticks += (TOTAL_DAY_TICKS) / 3;
+    }
+
+    if (state.window->keyboard.keys[GLFW_KEY_Q].pressed_tick) {
+      exit(0);
     }
 }
 
