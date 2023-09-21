@@ -18,7 +18,7 @@
 - A whole lot of different block types
 - More
 
-#### Building
+### Building
 
 ##### Unix-like
 `$ git clone --recurse-submodules https://github.com/jdah/minecraft-weekend.git`\
@@ -38,6 +38,18 @@ The game binary, once built with `$ make`, can be found in `./bin/`.
 
 *Be sure* to run with `$ ./bin/game` out of the root directory of the repository.
 If you are getting "cannot open file" errors (such as "cannot find ./res/shaders/*.vs"), this is the issue. 
+
+##### macOS M1
+Run this script in a terminal to download all dependences, build the program, and run the program.
+```
+git clone --recurse-submodules https://github.com/jdah/minecraft-weekend.git
+cd minecraft-weekend/
+brew install libxcursor
+make libs
+make dirs
+make game
+make run
+```
 
 ##### Windows
 
