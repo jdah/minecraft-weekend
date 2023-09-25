@@ -40,7 +40,7 @@ The game binary, once built with `$ make`, can be found in `./bin/`.
 If you are getting "cannot open file" errors (such as "cannot find ./res/shaders/*.vs"), this is the issue. 
 
 ##### macOS M1
-Run this script in a terminal to download all dependences, build the program, and run the program.
+Run this script in a terminal to download all dependencies, and build and run the program.
 ```
 git clone --recurse-submodules https://github.com/jdah/minecraft-weekend.git
 cd minecraft-weekend/
