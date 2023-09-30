@@ -25,11 +25,12 @@
 
 `$ make`
 
-to comepile this game just  run requirements.sh to install the requirements and comepile this script only work for debian and ubuntu base distro
+to comepile this game just  run requirements.sh to install the requirements and comepile this game, this script only work for debian and ubuntu base distro.
 
 ` $ cd minecraft-weekend` 
 
-` $ chmod +x requirements.sh`
+` $ chmod +x requirements.sh `
+
 ` $ sudo ./requirements.sh `
 
 The following static libraries under `lib/` must be built before the main project can be built:
