@@ -22,9 +22,13 @@
 
 ##### Unix-like
 `$ git clone --recurse-submodules https://github.com/jdah/minecraft-weekend.git`\
+
 `$ make`
-` to comepile this game just  run requirements.sh to install the requirements and comepile this this script only work for debian and ubuntu base distro`
+
+to comepile this game just  run requirements.sh to install the requirements and comepile this script only work for debian and ubuntu base distro
+
 ` $ cd minecraft-weekend` 
+
 ` $ chmod +x requirements.sh`
 ` $ sudo ./requirements.sh `
 
