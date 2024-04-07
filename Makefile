@@ -25,9 +25,9 @@ BIN = bin
 all: dirs libs game
 
 libs:
-	cd lib/cglm && cmake . -DCGLM_STATIC=ON && make
+	cd lib/cglm && cmake . "-DCGLM_STATIC=ON -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" && make
 	cd lib/glad && $(CC) -o src/glad.o -Iinclude -c src/glad.c
-	cd lib/glfw && cmake . && make
+	cd lib/glfw && cmake . "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" && make
 	cd lib/noise && make
 
 dirs:

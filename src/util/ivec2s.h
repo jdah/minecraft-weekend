@@ -58,6 +58,7 @@
 
 #include "ivec2.h"
 
+#if 0
 typedef union ivec2s {
   ivec2 raw;
 #if CGLM_USE_ANONYMOUS_STRUCT
@@ -67,6 +68,7 @@ typedef union ivec2s {
   };
 #endif
 } ivec2s;
+#endif
 
 #define GLMS_IVEC2_ONE_INIT   {GLM_IVEC2_ONE_INIT}
 #define GLMS_IVEC2_ZERO_INIT  {GLM_IVEC2_ZERO_INIT}
