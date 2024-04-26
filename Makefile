@@ -9,7 +9,7 @@ LDFLAGS = lib/glad/src/glad.o lib/cglm/libcglm.a lib/glfw/src/libglfw3.a lib/noi
 
 # GLFW required frameworks on OSX
 ifeq ($(UNAME_S), Darwin)
-	LDFLAGS += -framework OpenGL -framework IOKit -framework CoreVideo -framework Cocoa
+	LDFLAGS += -framework OpenGL -framework IOKit -framework CoreVideo -framework Cocoa -framework QuartzCore
 endif
 
 ifeq ($(UNAME_S), Linux)
