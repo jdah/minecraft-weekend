@@ -39,6 +39,7 @@ bool ray_block(struct Ray ray, f32 max_distance, void *arg, bool (*f)(void *, iv
     tmax = intbound(ray.origin, d);
     tdelta = glms_vec3_div(IVEC3S2V(step), d);
     radius = max_distance / glms_vec3_norm(d);
+    *d_out = UP;
 
     while (true) {
         if (f(arg, p)) {
