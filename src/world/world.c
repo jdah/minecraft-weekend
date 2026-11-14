@@ -1,7 +1,7 @@
-#include "../state.h"
+#include "state.h"
 #include "world.h"
 #include "light.h"
-#include "../util/sort.h"
+#include "util/sort.h"
 
 // the total number of chunks in _w->chunks
 #define NUM_CHUNKS(_w) ((_w)->chunks_size * (_w)->chunks_size * (_w)->chunks_size)
@@ -373,6 +373,32 @@ void world_set_center(struct World *self, ivec3s center_pos) {
     load_empty_chunks(self);
 }
 
+static void world_prepare_chunks(struct World *self) {
+    world_foreach_ftb(self, c0) {
+        if (c0 != NULL) {
+            chunk_prepare(c0);
+        }
+    }
+}
+
+static void world_render_base_chunks(struct World *self) {
+    world_foreach(self, chunk) {
+        if (chunk != NULL) {
+            chunk_render(chunk, BASE);
+        }
+    }
+}
+
+static void world_render_transparent_chunks(struct World *self) {
+    glDisable(GL_CULL_FACE);
+    world_foreach_btf(self, chunk) {
+        if (chunk != NULL) {
+            chunk_render(chunk, TRANSPARENT);
+        }
+    }
+    glEnable(GL_CULL_FACE);
+}
+
 void world_render(struct World *self) {
     // copy camera settings from view entity
     struct CameraComponent *c_camera = ecs_get(self->entity_view, C_CAMERA);
@@ -386,11 +412,7 @@ void world_render(struct World *self) {
     state.renderer.clear_color = self->sky.clear_color;
 
     // prepare (mesh) chunks from nearest to farthest
-    world_foreach_ftb(self, c0) {
-        if (c0 != NULL) {
-            chunk_prepare(c0);
-        } 
-    }
+    world_prepare_chunks(self);
 
     renderer_use_shader(&state.renderer, SHADER_CHUNK);
     renderer_push_camera(&state.renderer);
@@ -405,20 +427,10 @@ void world_render(struct World *self) {
     
 
     // render solid geometry in no particular order
-    world_foreach(self, c1) {
-        if (c1 != NULL) {
-            chunk_render(c1, BASE);
-        }
-    }
+    world_render_base_chunks(self);
 
     // render transparent geometry back to front
-    glDisable(GL_CULL_FACE);
-    world_foreach_btf(self, c2) {
-        if (c2 != NULL) {
-            chunk_render(c2, TRANSPARENT);
-        }
-    }
-    glEnable(GL_CULL_FACE);
+    world_render_transparent_chunks(self);
 
     ecs_event(&self->ecs, ECS_RENDER);
     renderer_pop_camera(&state.renderer);

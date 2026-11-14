@@ -1,8 +1,8 @@
 #ifndef C_LIGHT_H
 #define C_LIGHT_H
 
-#include "../util/util.h"
-#include "../world/light.h"
+#include "util/util.h"
+#include "world/light.h"
 
 struct LightComponent {
     Torchlight light;

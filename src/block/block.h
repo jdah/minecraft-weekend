@@ -1,10 +1,10 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include "../util/util.h"
-#include "../gfx/blockatlas.h"
-#include "../world/blockmesh.h"
-#include "../world/light.h"
+#include "util/util.h"
+#include "gfx/blockatlas.h"
+#include "world/blockmesh.h"
+#include "world/light.h"
 
 // Forward declaration
 struct World;

@@ -1,7 +1,7 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-#include "../util/util.h"
+#include "util/util.h"
 
 // converts RGBA in hexadecimal u32 in [0, 255] to vec4s in [0, 1]
 #define RGBAX2F(c) ((vec4s) {{\

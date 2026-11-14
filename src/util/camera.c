@@ -1,5 +1,5 @@
 #include "camera.h"
-#include "../gfx/window.h"
+#include "gfx/window.h"
 
 void perspective_camera_init(struct PerspectiveCamera *self, f32 fov) {
     memset(self, 0, sizeof(struct PerspectiveCamera));

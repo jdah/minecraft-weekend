@@ -1,5 +1,5 @@
 #include "block.h"
-#include "../gfx/blockatlas.h"
+#include "gfx/blockatlas.h"
 
 static ivec2s get_texture_location(struct World *world, ivec3s pos, enum Direction d) {
     assert(false);

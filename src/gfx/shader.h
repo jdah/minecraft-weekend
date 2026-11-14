@@ -1,10 +1,10 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "../util/camera.h"
+#include "util/camera.h"
 #include "gfx.h"
 #include "texture.h"
-#include "../util/util.h"
+#include "util/util.h"
 
 struct VertexAttr {
     GLuint index;

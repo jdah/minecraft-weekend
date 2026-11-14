@@ -1,9 +1,9 @@
 #include "c_blocklook.h"
 #include "ecs.h"
 
-#include "../world/world.h"
-#include "../state.h"
-#include "../gfx/renderer.h"
+#include "world/world.h"
+#include "state.h"
+#include "gfx/renderer.h"
 
 static bool block_raycast(struct World *world, ivec3s pos) {
     struct Block block = BLOCKS[world_get_block(world, pos)];

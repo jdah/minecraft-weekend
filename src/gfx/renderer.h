@@ -1,7 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include "../util/util.h"
+#include "util/util.h"
 #include "blockatlas.h"
 #include "gfx.h"
 #include "shader.h"

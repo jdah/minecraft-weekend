@@ -1,5 +1,5 @@
 #include "renderer.h"
-#include "../state.h"
+#include "state.h"
 
 void renderer_init(struct Renderer *self) {
     *self = (struct Renderer) {0};

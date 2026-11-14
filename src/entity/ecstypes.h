@@ -1,7 +1,7 @@
 #ifndef ECSTYPES_H
 #define ECSTYPES_H
 
-#include "../util/util.h"
+#include "util/util.h"
 
 #define ENTITY_NONE 0
 

@@ -1,7 +1,7 @@
 #include "c_control.h"
 
-#include "../state.h"
-#include "../ui/ui.h"
+#include "state.h"
+#include "ui/ui.h"
 
 static void update(struct ControlComponent *c_control, struct Entity entity) {
     struct CameraComponent *c_camera = ecs_get(entity, C_CAMERA);

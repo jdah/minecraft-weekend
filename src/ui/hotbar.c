@@ -1,9 +1,9 @@
 #include "hotbar.h"
 #include "ui.h"
 
-#include "../state.h"
-#include "../gfx/renderer.h"
-#include "../block/block.h"
+#include "state.h"
+#include "gfx/renderer.h"
+#include "block/block.h"
 
 const f32 SLOT_PIXELS = 40.0f;
 

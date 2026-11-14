@@ -1,7 +1,7 @@
 #ifndef C_MOVEMENT_H
 #define C_MOVEMENT_H
 
-#include "../util/util.h"
+#include "util/util.h"
 #include "ecstypes.h"
 
 struct MovementComponent {

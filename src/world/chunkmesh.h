@@ -1,10 +1,10 @@
 #ifndef CHUNKMESH_H
 #define CHUNKMESH_H
 
-#include "../gfx/gfx.h"
-#include "../gfx/vao.h"
-#include "../gfx/vbo.h"
-#include "../util/util.h"
+#include "gfx/gfx.h"
+#include "gfx/vao.h"
+#include "gfx/vbo.h"
+#include "util/util.h"
 
 // forward declarations
 struct Chunk;

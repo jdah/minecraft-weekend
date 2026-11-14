@@ -1,5 +1,5 @@
 #include "worldgen.h"
-#include "../world.h"
+#include "world/world.h"
 
 void worldgen_flowers(struct Chunk *chunk, FWGGet get, FWGSet set, s64 x, s64 y, s64 z) {
     enum BlockId flower = RANDCHANCE(0.6) ? ROSE : BUTTERCUP;

@@ -1,7 +1,7 @@
 #include "c_light.h"
 #include "ecs.h"
-#include "../world/world.h"
-#include "../world/light.h"
+#include "world/world.h"
+#include "world/light.h"
 
 static void tick(struct LightComponent *c_light, struct Entity entity) {
     struct PositionComponent *c_position = ecs_get(entity, C_POSITION);

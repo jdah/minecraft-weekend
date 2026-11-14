@@ -1,14 +1,14 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include "../entity/player.h"
-#include "../gfx/gfx.h"
-#include "../util/util.h"
-#include "../block/block.h"
+#include "entity/player.h"
+#include "gfx/gfx.h"
+#include "util/util.h"
+#include "block/block.h"
 #include "chunk.h"
 #include "light.h"
 #include "sky.h"
-#include "../entity/ecs.h"
+#include "entity/ecs.h"
 #include "gen/worldgen.h"
 
 #define DAY_TICKS (14 * 60 * TICKRATE)

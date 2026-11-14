@@ -1,4 +1,4 @@
-#include "../state.h"
+#include "state.h"
 #include "chunk.h"
 #include "world.h"
 #include "light.h"

@@ -1,5 +1,5 @@
 #include "block.h"
-#include "../world/light.h"
+#include "world/light.h"
 
 static ivec2s get_texture_location(struct World *world, ivec3s pos, enum Direction d) {
     if (d == UP) {

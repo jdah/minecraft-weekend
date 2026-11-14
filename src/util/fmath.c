@@ -1,5 +1,5 @@
 #include "fmath.h"
-#include "../util/util.h"
+#include "util/util.h"
 
 int ivec3scmp(ivec3s a, ivec3s b) {
     return memcmp(&a, &b, sizeof(ivec3s));

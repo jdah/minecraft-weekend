@@ -1,6 +1,6 @@
 #include "c_position.h"
 #include "ecs.h"
-#include "../world/world.h"
+#include "world/world.h"
 
 static void tick(struct PositionComponent *c_position, struct Entity entity) {
     ivec3s block = world_pos_to_block(c_position->position);

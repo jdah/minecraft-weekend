@@ -1,7 +1,7 @@
 #ifndef ECS_H
 #define ECS_H
 
-#include "../util/util.h"
+#include "util/util.h"
 
 // forward declarations
 struct World;

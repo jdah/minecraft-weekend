@@ -1,5 +1,5 @@
 #include "worldgen.h"
-#include "../world.h"
+#include "world/world.h"
 
 void worldgen_shrub(struct Chunk *chunk, FWGGet get, FWGSet set, s64 x, s64 y, s64 z) {
     enum BlockId under = get(chunk, x, y, z);

@@ -1,7 +1,7 @@
 #ifndef WORLDGEN_H
 #define WORLDGEN_H
 
-#include "../../util/util.h"
+#include "util/util.h"
 
 // forward declarations
 struct Chunk;

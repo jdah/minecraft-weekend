@@ -1,8 +1,8 @@
 #ifndef UI_H
 #define UI_H
 
-#include "../gfx/gfx.h"
-#include "../util/util.h"
+#include "gfx/gfx.h"
+#include "util/util.h"
 
 #include "hotbar.h"
 #include "crosshair.h"

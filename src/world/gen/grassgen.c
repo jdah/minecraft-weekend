@@ -1,5 +1,5 @@
 #include "worldgen.h"
-#include "../world.h"
+#include "world/world.h"
 
 void worldgen_grass(struct Chunk *chunk, FWGGet get, FWGSet set, s64 x, s64 y, s64 z) {
     s64 s = RAND(2, 10);

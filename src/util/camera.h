@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "../util/util.h"
+#include "util/util.h"
 
 #define CAMERA_TYPE_LAST CAMERA_PERSPECTIVE
 enum CameraType {

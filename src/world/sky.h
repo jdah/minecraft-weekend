@@ -1,10 +1,10 @@
 #ifndef SKY_H
 #define SKY_H
 
-#include "../gfx/gfx.h"
-#include "../util/util.h"
-#include "../gfx/vao.h"
-#include "../gfx/vbo.h"
+#include "gfx/gfx.h"
+#include "util/util.h"
+#include "gfx/vao.h"
+#include "gfx/vbo.h"
 
 // forward declarations
 struct World;

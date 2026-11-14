@@ -1,8 +1,8 @@
 #ifndef HOTBAR_H
 #define HOTBAR_H
 
-#include "../util/util.h"
-#include "../block/block.h"
+#include "util/util.h"
+#include "block/block.h"
 
 #define HOTBAR_SLOTS 10
 

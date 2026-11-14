@@ -1,8 +1,8 @@
 #include "crosshair.h"
 #include "ui.h"
 
-#include "../state.h"
-#include "../gfx/renderer.h"
+#include "state.h"
+#include "gfx/renderer.h"
 
 static void render(struct UICrosshair *self) {
     renderer_quad_texture(

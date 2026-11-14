@@ -1,6 +1,6 @@
 #include "c_movement.h"
 #include "ecs.h"
-#include "../world/world.h"
+#include "world/world.h"
 
 static void tick(struct MovementComponent *c_movement, struct Entity entity) {
     struct CameraComponent *c_camera = ecs_get(entity, C_CAMERA);

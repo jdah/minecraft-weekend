@@ -1,5 +1,5 @@
-#include "../gfx/renderer.h"
-#include "../state.h"
+#include "gfx/renderer.h"
+#include "state.h"
 #include "sky.h"
 
 // sun(rise/set) time in ticks

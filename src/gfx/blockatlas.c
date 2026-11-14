@@ -1,6 +1,6 @@
 #include "blockatlas.h"
-#include "../block/block.h"
-#include "../state.h"
+#include "block/block.h"
+#include "state.h"
 
 static void copy_pixels(u8 *pixels, ivec2s image_size, ivec2s size, ivec2s from, ivec2s to) {
     for (s32 j = 0; j < size.y; j++) {

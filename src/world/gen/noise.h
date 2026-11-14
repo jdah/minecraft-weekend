@@ -1,7 +1,7 @@
 #ifndef NOISE_H
 #define NOISE_H
 
-#include "../../util/util.h"
+#include "util/util.h"
 
 typedef f32 (*FNoise)(void *p, f32 s, f32 x, f32 z);
 

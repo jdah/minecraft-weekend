@@ -1,7 +1,7 @@
 #ifndef BLOCKMESH_H
 #define BLOCKMESH_H
 
-#include "../util/util.h"
+#include "util/util.h"
 
 // forward declarations
 struct Block;

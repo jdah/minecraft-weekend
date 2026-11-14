@@ -1,6 +1,6 @@
 #include "c_physics.h"
 #include "ecs.h"
-#include "../world/world.h"
+#include "world/world.h"
 
 const f32 MOVEMENT_EPSILON = 0.01f;
 

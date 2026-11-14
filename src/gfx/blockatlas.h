@@ -1,7 +1,7 @@
 #ifndef BLOCKATLAS_H
 #define BLOCKATLAS_H
 
-#include "../util/util.h"
+#include "util/util.h"
 #include "gfx.h"
 #include "texture.h"
 

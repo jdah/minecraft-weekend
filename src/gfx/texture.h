@@ -2,7 +2,7 @@
 #define TEXTURE_H
 
 #include "gfx.h"
-#include "../util/util.h"
+#include "util/util.h"
 
 struct Texture {
     GLuint handle;

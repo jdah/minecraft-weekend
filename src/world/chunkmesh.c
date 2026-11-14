@@ -1,4 +1,4 @@
-#include "../state.h"
+#include "state.h"
 #include "chunk.h"
 
 // Buffer sizes (in bytes) corresponding to BufferType

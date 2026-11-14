@@ -1,8 +1,8 @@
 
 #include "worldgen.h"
 #include "noise.h"
-#include "../chunk.h"
-#include "../world.h"
+#include "world/chunk.h"
+#include "world/world.h"
 
 #define RADIAL2I(c, r, v)\
     (glms_vec2_norm(glms_vec2_sub(IVEC2S2V((c)), IVEC2S2V((v)))) / glms_vec2_norm(IVEC2S2V((r))))

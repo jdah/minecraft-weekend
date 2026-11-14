@@ -1,7 +1,7 @@
 #ifndef C_PHYSICS_H
 #define C_PHYSICS_H
 
-#include "../util/util.h"
+#include "util/util.h"
 #include "ecstypes.h"
 
 struct PhysicsComponent {

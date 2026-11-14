@@ -1,8 +1,8 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "../block/block.h"
-#include "../util/util.h"
+#include "block/block.h"
+#include "util/util.h"
 #include "chunkmesh.h"
 #include "light.h"
 

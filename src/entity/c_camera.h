@@ -2,7 +2,7 @@
 #define C_CAMERA_H
 
 #include "ecs.h"
-#include "../util/camera.h"
+#include "util/camera.h"
 
 struct CameraComponent {
     vec3s offset;

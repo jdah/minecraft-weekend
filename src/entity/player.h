@@ -1,9 +1,9 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "../util/util.h"
-#include "../util/camera.h"
-#include "../block/block.h"
+#include "util/util.h"
+#include "util/camera.h"
+#include "block/block.h"
 
 // Forward declaration
 struct World;

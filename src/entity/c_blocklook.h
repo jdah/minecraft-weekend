@@ -1,7 +1,7 @@
 #ifndef C_BLOCKLOOK_H
 #define C_BLOCKLOOK_H
 
-#include "../util/util.h"
+#include "util/util.h"
 
 struct BlockLookComponent {
     bool hit;
